@@ -1,530 +1,575 @@
-# RehabFlow AI — Complete 8‑Day Execution Checklist
+# RehabFlow AI — Complete Execution Checklist (Flow-First, Production-Grade)
 
-This document defines the **complete execution plan**, task split, dependencies, and deliverables for building RehabFlow AI using **Python, Gradio, and MedGemma**.
+This checklist follows the **true production user flow order**, starting from Authentication and proceeding step-by-step through the full RehabFlow AI lifecycle.
+
+This replaces the previous module-first checklist.
 
 Team:
 
-* **Amogha (You)** — Product Architect, UI/UX Lead, AI Logic Lead, Integration Lead
+* **Amogha** — Product Architect, UI/UX Lead, AI Logic Lead, Integration Lead
 * **Muneer** — Infrastructure Lead, MedGemma Integration, Database, Concurrency, Security
+
+Environment:
+
+* Python managed via **uv**
+* UI built using **Gradio**
+* AI powered by **MedGemma via Transformers**
+* Database: **SQLite via SQLAlchemy**
 
 ---
 
-# 0. Project Initialization (Both — Mandatory First Step)
+# Phase 0 — Foundation (Already Completed ✅)
 
 ## Objective
 
-Establish foundation before development begins.
+Initialize production-grade project using uv.
 
-## Checklist
+## Completed Tasks
 
-* [ ] Create root project folder
+* [x] uv project initialized
+* [x] Dependencies installed via uv
+* [x] Folder structure created
+* [x] Gradio base app runs
+* [x] app.py entrypoint working
 
-```
-rehabflow_ai/
-│
-├── app.py
-├── requirements.txt
-├── README.md
-│
-├── ui/
-├── ai/
-├── core/
-├── security/
-├── assets/
-├── data/
-```
-
-* [ ] Create Python virtual environment
-
-```
-python -m venv venv
-source venv/bin/activate   (Linux/Mac)
-venv\\Scripts\\activate  (Windows)
-```
-
-* [ ] Install dependencies
-
-```
-pip install gradio
-pip install torch transformers accelerate
-pip install pillow opencv-python
-pip install reportlab
-pip install pyttsx3
-pip install sqlalchemy
-pip install python-dotenv
-```
-
-* [ ] Verify Gradio works
-
-```
-python -c "import gradio as gr; print('Gradio OK')"
-```
+No further action required.
 
 ---
 
-# Folder Ownership
+# Phase 1 — Authentication System (START HERE)
 
-## Amogha Owns
+## Why This Comes First
+
+Everything depends on user identity:
+
+* Plans
+* Progress
+* Reports
+* Sessions
+* Diet plans
+
+All must link to user_id.
+
+---
+
+## Amogha Tasks — Auth UI
+
+File:
 
 ```
-app.py
-ui/
-ai/prompt_builder.py
-ai/plan_generator.py
+ui/auth.py
+```
+
+Checklist:
+
+* [ ] Create Login screen
+
+* [ ] Create Register screen
+
+* [ ] Add fields:
+
+  * [ ] Name
+  * [ ] Age
+  * [ ] Email or Phone
+  * [ ] Password
+  * [ ] Confirm Password
+
+* [ ] Create Tabs:
+
+  * [ ] Login tab
+  * [ ] Register tab
+
+* [ ] Return structured login data
+
+Deliverable:
+
+Working Auth UI
+
+Dependency:
+
+Phase 0 complete
+
+---
+
+## Muneer Tasks — Auth Database Layer
+
+File:
+
+```
+core/database.py
+```
+
+Checklist:
+
+* [ ] Create User table
+
+Fields:
+
+```
+id
+name
+age
+email
+password_hash
+created_at
+```
+
+* [ ] Implement:
+
+```
+create_user()
+get_user_by_email()
+verify_user()
+```
+
+* [ ] Use bcrypt password hashing
+
+Deliverable:
+
+Secure user storage
+
+Dependency:
+
+Phase 0 complete
+
+---
+
+# Phase 2 — Session Management System
+
+## Objective
+
+Maintain logged-in user state.
+
+---
+
+## Amogha Tasks
+
+File:
+
+```
 core/session_engine.py
 ```
 
-## Muneer Owns
+Checklist:
+
+* [ ] Create user session object
+* [ ] Store current_user_id
+* [ ] Enable persistent session
+
+Deliverable:
+
+User session maintained
+
+Dependency:
+
+Phase 1 complete
+
+---
+
+## Muneer Tasks
+
+File:
 
 ```
-ai/medgemma.py
-ai/image_analysis.py
-core/database.py
-core/concurrency.py
-core/report_generator.py
 security/sanitizer.py
 ```
 
----
-
-# Day 1 — UI Foundation + MedGemma Setup
-
-## Amogha Tasks (UI Foundation)
-
-### Task A1.1 — Create Home Screen
-
-File: `ui/home.py`
-
 Checklist:
 
-* [ ] Create Gradio layout
-* [ ] Add buttons:
+* [ ] Validate login inputs
+* [ ] Validate registration inputs
 
-  * [ ] Start Recovery
-  * [ ] Continue Session
-  * [ ] View Progress
-  * [ ] Export Report
+Deliverable:
 
-Deliverable: Functional home screen
+Secure authentication inputs
 
-Dependency: None
+Dependency:
 
----
-
-### Task A1.2 — Create Navigation Controller
-
-File: `app.py`
-
-Checklist:
-
-* [ ] Create screen routing system
-* [ ] Connect home screen
-
-Deliverable: App launches successfully
-
-Dependency: A1.1 complete
+Phase 1 complete
 
 ---
 
-### Task A1.3 — Apply UI Styling
+# Phase 3 — Medical Intake & Assessment System
 
-Checklist:
+## Objective
 
-* [ ] Large fonts
-* [ ] Clean layout
-* [ ] Accessible buttons
-
-Deliverable: Product‑quality UI feel
-
-Dependency: A1.2 complete
+Collect medical and lifestyle data.
 
 ---
-
-## Muneer Tasks (MedGemma Setup)
-
-### Task M1.1 — Install and Load MedGemma
-
-File: `ai/medgemma.py`
-
-Checklist:
-
-* [ ] Install MedGemma
-* [ ] Load model successfully
-
-Deliverable: Model loads without errors
-
-Dependency: Project initialization complete
-
----
-
-### Task M1.2 — Test Basic Inference
-
-Checklist:
-
-* [ ] Send test prompt
-* [ ] Receive response
-
-Deliverable: Inference working
-
-Dependency: M1.1 complete
-
----
-
-# Day 2 — Assessment System
 
 ## Amogha Tasks
 
-### Task A2.1 — Build Assessment UI
-
-File: `ui/assessment.py`
-
-Checklist:
-
-* [ ] Pain location input
-* [ ] Pain level slider
-* [ ] Diet preference selector
-* [ ] Lifestyle questions
-* [ ] Psychometric questions
-
-Deliverable: Assessment form working
-
-Dependency: Navigation system complete
-
----
-
-### Task A2.2 — Add Image Upload
-
-Checklist:
-
-* [ ] Add Gradio image upload component
-* [ ] Display preview
-
-Deliverable: Image upload working
-
-Dependency: Assessment UI complete
-
----
-
-### Task A2.3 — Return Structured Data
-
-Checklist:
-
-* [ ] Convert input to dictionary
-
-Example:
+File:
 
 ```
-{
- pain_level: 5,
- diet: veg,
- lifestyle: desk_job
-}
+ui/assessment.py
 ```
 
-Deliverable: Structured data returned
+Checklist:
 
-Dependency: Assessment form complete
+Collect:
+
+Profile:
+
+* [ ] Age
+* [ ] Gender
+* [ ] Language
+
+Pain:
+
+* [ ] Pain location
+* [ ] Pain level
+* [ ] Duration
+
+Lifestyle:
+
+* [ ] Occupation
+* [ ] Sitting hours
+* [ ] Commute type
+* [ ] Gym usage
+
+Diet:
+
+* [ ] Diet preference
+* [ ] Dairy intake
+* [ ] Meals per day
+
+Psychometric:
+
+* [ ] Motivation level
+* [ ] Discipline level
+* [ ] Sleep duration
+
+Image:
+
+* [ ] Injury photo upload
+
+Deliverable:
+
+Structured assessment_data
+
+Dependency:
+
+Phase 2 complete
 
 ---
 
 ## Muneer Tasks
 
-### Task M2.1 — Create MedGemma Interface Function
-
-File: `ai/medgemma.py`
-
-Function:
+File:
 
 ```
-def generate_response(prompt):
-    pass
+ai/image_analysis.py
 ```
-
-Deliverable: Callable inference function
-
-Dependency: MedGemma installed
-
----
-
-# Day 3 — Exercise Session Engine
-
-## Amogha Tasks
-
-### Task A3.1 — Build Session Screen
-
-File: `ui/session.py`
-
-Checklist:
-
-* [ ] Display exercise name
-* [ ] Display instructions
-* [ ] Display image
-
-Deliverable: Session screen visible
-
-Dependency: Navigation complete
-
----
-
-### Task A3.2 — Build Timer Engine
-
-File: `core/session_engine.py`
-
-Checklist:
-
-* [ ] Countdown timer function
-* [ ] Start button
-* [ ] Stop button
-
-Deliverable: Timer works
-
-Dependency: Session UI complete
-
----
-
-### Task A3.3 — Exercise Progression Logic
-
-Checklist:
-
-* [ ] Move from exercise 1 → exercise 2
-* [ ] Track completion
-
-Deliverable: Session flow working
-
-Dependency: Timer working
-
----
-
-## Muneer Tasks
-
-### Task M3.1 — Build Image Processing Pipeline
-
-File: `ai/image_analysis.py`
 
 Checklist:
 
 * [ ] Validate image
 * [ ] Preprocess image
-* [ ] Return processed image
 
-Deliverable: Image pipeline working
+Deliverable:
 
-Dependency: MedGemma integration complete
+Safe image pipeline
 
----
+Dependency:
 
-# Day 4 — Plan Generation System
-
-## Amogha Tasks
-
-### Task A4.1 — Build Prompt Builder
-
-File: `ai/prompt_builder.py`
-
-Checklist:
-
-* [ ] Convert assessment → prompt
-
-Deliverable: Prompt generator working
-
-Dependency: Assessment complete
+Assessment image upload exists
 
 ---
 
-### Task A4.2 — Build Plan Generator
+# Phase 4 — MedGemma Integration
 
-File: `ai/plan_generator.py`
+## Objective
 
-Checklist:
-
-* [ ] Convert MedGemma output → structured plan
-
-Deliverable: Structured plan object
-
-Dependency: Prompt builder complete
+Enable AI reasoning.
 
 ---
 
 ## Muneer Tasks
 
-### Task M4.1 — Optimize MedGemma Inference
+File:
+
+```
+ai/medgemma.py
+```
 
 Checklist:
 
-* [ ] Reduce inference latency
-* [ ] Improve memory handling
+* [ ] Load MedGemma model
+* [ ] Implement inference function
 
-Deliverable: Faster plan generation
+Function:
 
-Dependency: MedGemma working
+```
+generate_response(prompt)
+```
 
----
+Deliverable:
 
-# Day 5 — Database Integration
+Working AI inference
 
-## Muneer Tasks
+Dependency:
 
-### Task M5.1 — Create Database Layer
-
-File: `core/database.py`
-
-Checklist:
-
-* [ ] save_user()
-* [ ] save_plan()
-* [ ] save_progress()
-* [ ] load_plan()
-
-Deliverable: Database working
-
-Dependency: None
+Foundation complete
 
 ---
 
 ## Amogha Tasks
 
-### Task A5.1 — Connect UI to Plan Generator
+File:
+
+```
+ai/prompt_builder.py
+```
 
 Checklist:
 
-* [ ] Assessment → Plan generation
-* [ ] Plan → Display UI
+* [ ] Convert assessment_data → prompt
 
-Deliverable: End‑to‑end plan generation working
+Deliverable:
 
-Dependency: Plan generator complete
+Medical prompt structure
+
+Dependency:
+
+Assessment complete
 
 ---
 
-# Day 6 — Progress Tracking + Report System
+# Phase 5 — Plan Generation System
+
+## Objective
+
+Generate rehab + diet plan.
+
+---
+
+## Amogha Tasks
+
+File:
+
+```
+ai/plan_generator.py
+```
+
+Checklist:
+
+* [ ] Call medgemma
+* [ ] Convert response → structured plan
+
+Deliverable:
+
+Plan object created
+
+Dependency:
+
+MedGemma working
+
+---
 
 ## Muneer Tasks
 
-### Task M6.1 — Build Report Generator
+File:
 
-File: `core/report_generator.py`
+```
+core/concurrency.py
+```
+
+Checklist:
+
+* [ ] Implement ThreadPoolExecutor
+
+Deliverable:
+
+Concurrent inference
+
+Dependency:
+
+MedGemma working
+
+---
+
+# Phase 6 — Plan Display UI
+
+## Amogha Tasks
+
+File:
+
+```
+ui/plan.py
+```
+
+Checklist:
+
+* [ ] Display exercises
+* [ ] Display diet
+
+Deliverable:
+
+Plan visible to user
+
+Dependency:
+
+Plan generation complete
+
+---
+
+# Phase 7 — Guided Rehab Session System
+
+## Amogha Tasks
+
+File:
+
+```
+ui/session.py
+```
+
+Checklist:
+
+* [ ] Show exercise
+* [ ] Show timer
+* [ ] Track completion
+
+Deliverable:
+
+Exercise session working
+
+Dependency:
+
+Plan display working
+
+---
+
+# Phase 8 — Progress Tracking System
+
+## Muneer Tasks
+
+File:
+
+```
+core/database.py
+```
+
+Checklist:
+
+* [ ] Save progress
+* [ ] Load progress
+
+---
+
+## Amogha Tasks
+
+File:
+
+```
+ui/progress.py
+```
+
+Checklist:
+
+* [ ] Show recovery graphs
+
+Dependency:
+
+Progress saving working
+
+---
+
+# Phase 9 — Plan Adaptation System
+
+## Amogha Tasks
+
+File:
+
+```
+ai/plan_adapter.py
+```
+
+Checklist:
+
+* [ ] Modify plan based on progress
+
+Dependency:
+
+Progress tracking working
+
+---
+
+# Phase 10 — Report Generator
+
+## Muneer Tasks
+
+File:
+
+```
+core/report_generator.py
+```
 
 Checklist:
 
 * [ ] Generate PDF report
 
-Deliverable: Exportable report
-
-Dependency: Database complete
-
 ---
 
 ## Amogha Tasks
 
-### Task A6.1 — Build Progress Dashboard
+File:
 
-File: `ui/progress.py`
-
-Checklist:
-
-* [ ] Show pain trends
-* [ ] Show completion rate
-
-Deliverable: Progress visible
-
-Dependency: Database ready
-
----
-
-# Day 7 — Security + Concurrency
-
-## Muneer Tasks
-
-### Task M7.1 — Input Sanitization
-
-File: `security/sanitizer.py`
+```
+ui/report.py
+```
 
 Checklist:
 
-* [ ] Validate inputs
-* [ ] Validate images
+* [ ] Export report UI
 
-Deliverable: Secure inputs
+Dependency:
 
-Dependency: Image pipeline complete
-
----
-
-### Task M7.2 — Concurrency System
-
-File: `core/concurrency.py`
-
-Checklist:
-
-* [ ] Thread pool executor
-* [ ] Async plan generation
-
-Deliverable: Concurrent execution working
-
-Dependency: Plan generator complete
+Report generator complete
 
 ---
 
-# Day 8 — Integration + Polish
+# Final Integration Checklist
 
-## Both Tasks
+Full flow must work:
 
-Checklist:
-
-* [ ] Connect all modules
-* [ ] Fix bugs
-* [ ] Optimize performance
-* [ ] Improve UI clarity
-* [ ] Test full workflow
-
----
-
-# Final Demo Flow Checklist
-
-Must work end‑to‑end:
-
-* [ ] Assessment completed
-* [ ] Image uploaded
-* [ ] Plan generated
-* [ ] Session started
+* [ ] User registers
+* [ ] User logs in
+* [ ] User completes assessment
+* [ ] User uploads image
+* [ ] AI generates plan
+* [ ] User performs session
 * [ ] Timer works
-* [ ] Progress tracked
-* [ ] Report exported
+* [ ] Progress saved
+* [ ] Plan adapts
+* [ ] Report exports
 
 ---
 
-# Success Criteria
-
-RehabFlow AI is considered complete when:
-
-* UI feels like production product
-* MedGemma generates plans reliably
-* Exercise session works with timers
-* Progress tracking works
-* Report export works
-* No crashes
-
----
-
-# Architecture Authority
+# Authority and Ownership
 
 Amogha owns:
 
-* Product architecture
 * UI
-* Plan logic
+* Prompt logic
+* Plan generation
 * Integration
 
 Muneer owns:
 
-* Model integration
-* Infrastructure
+* MedGemma integration
 * Database
 * Security
 * Concurrency
 
 ---
 
-This checklist is optimized for **maximum hackathon success and execution speed**.
+# Execution Rule
 
-Follow sequentially and strictly respect dependencies.
+Always build in flow order.
+
+Never skip phases.
+
+Never mix responsibilities.
+
+This ensures production-grade architecture and hackathon-winning quality.
