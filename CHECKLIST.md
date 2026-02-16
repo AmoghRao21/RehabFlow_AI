@@ -1,54 +1,144 @@
-# RehabFlow AI — Complete Execution Checklist (Flow-First, Production-Grade)
+# RehabFlow AI — Complete Execution Checklist (Flow-First, Supabase, Production-Grade)
 
-This checklist follows the **true production user flow order**, starting from Authentication and proceeding step-by-step through the full RehabFlow AI lifecycle.
+This checklist defines the **full production execution plan** for RehabFlow AI using:
 
-This replaces the previous module-first checklist.
+* **uv** for Python environment
+* **Gradio** for UI
+* **MedGemma** for AI
+* **Supabase (PostgreSQL)** for Database
+* **Supabase Auth** for Authentication
+* **Supabase Storage** for Image Storage
+
+This replaces SQLite-based architecture.
 
 Team:
 
 * **Amogha** — Product Architect, UI/UX Lead, AI Logic Lead, Integration Lead
-* **Muneer** — Infrastructure Lead, MedGemma Integration, Database, Concurrency, Security
-
-Environment:
-
-* Python managed via **uv**
-* UI built using **Gradio**
-* AI powered by **MedGemma via Transformers**
-* Database: **SQLite via SQLAlchemy**
+* **Muneer** — Infrastructure Lead, MedGemma Integration, Supabase Integration, Concurrency, Security
 
 ---
 
-# Phase 0 — Foundation (Already Completed ✅)
+# Phase 0 — Foundation (Completed ✅)
+
+Completed:
+
+* [x] uv project initialized
+* [x] Dependencies installed
+* [x] Gradio base app running
+
+---
+
+# Phase 1 — Supabase Setup (CRITICAL FIRST STEP)
 
 ## Objective
 
-Initialize production-grade project using uv.
+Configure Supabase as the primary backend.
 
-## Completed Tasks
+Supabase will handle:
 
-* [x] uv project initialized
-* [x] Dependencies installed via uv
-* [x] Folder structure created
-* [x] Gradio base app runs
-* [x] app.py entrypoint working
-
-No further action required.
+* Authentication
+* PostgreSQL Database
+* Image Storage
+* Password reset
 
 ---
 
-# Phase 1 — Authentication System (START HERE)
+## Muneer Tasks — Supabase Project Setup
 
-## Why This Comes First
+Checklist:
 
-Everything depends on user identity:
+* [ ] Create Supabase project
+* [ ] Enable Email authentication
+* [ ] Enable password reset
+* [ ] Create storage bucket:
 
-* Plans
-* Progress
-* Reports
-* Sessions
-* Diet plans
+```
+injury-images
+```
 
-All must link to user_id.
+* [ ] Get credentials:
+
+```
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+```
+
+* [ ] Store in `.env`
+
+Deliverable:
+
+Supabase backend ready
+
+Dependency:
+
+None
+
+---
+
+## Database Schema (Supabase PostgreSQL)
+
+Muneer creates tables:
+
+### users
+
+Managed by Supabase Auth
+
+---
+
+### profiles table
+
+```
+id (uuid, primary key, references auth.users)
+name
+age
+created_at
+```
+
+---
+
+### assessments table
+
+```
+id
+user_id
+assessment_data (jsonb)
+created_at
+```
+
+---
+
+### rehab_plans table
+
+```
+id
+user_id
+plan_data (jsonb)
+created_at
+```
+
+---
+
+### progress table
+
+```
+id
+user_id
+day
+progress_data (jsonb)
+created_at
+```
+
+---
+
+# Phase 2 — Authentication System (Supabase Auth)
+
+Supabase handles:
+
+* Registration
+* Login
+* Session management
+* Forgot password
 
 ---
 
@@ -62,140 +152,84 @@ ui/auth.py
 
 Checklist:
 
-* [ ] Create Login screen
+Create tabs:
 
-* [ ] Create Register screen
+Login Tab:
 
-* [ ] Add fields:
+* [ ] Email input
+* [ ] Password input
+* [ ] Login button
+* [ ] Forgot Password button
 
-  * [ ] Name
-  * [ ] Age
-  * [ ] Email or Phone
-  * [ ] Password
-  * [ ] Confirm Password
+Register Tab:
 
-* [ ] Create Tabs:
+* [ ] Name
+* [ ] Age
+* [ ] Email
+* [ ] Password
+* [ ] Register button
 
-  * [ ] Login tab
-  * [ ] Register tab
+Forgot Password Flow:
 
-* [ ] Return structured login data
+* [ ] Email input
+* [ ] Send reset request
+* [ ] Show success message
 
 Deliverable:
 
-Working Auth UI
+Full auth UI connected to Supabase
 
 Dependency:
 
-Phase 0 complete
+Supabase project created
 
 ---
 
-## Muneer Tasks — Auth Database Layer
+## Muneer Tasks — Supabase Auth Integration
 
 File:
 
 ```
-core/database.py
+core/supabase_client.py
 ```
 
 Checklist:
 
-* [ ] Create User table
-
-Fields:
+Implement:
 
 ```
-id
-name
-age
-email
-password_hash
-created_at
+sign_up()
+sign_in()
+sign_out()
+reset_password()
+get_current_user()
 ```
-
-* [ ] Implement:
-
-```
-create_user()
-get_user_by_email()
-verify_user()
-```
-
-* [ ] Use bcrypt password hashing
 
 Deliverable:
 
-Secure user storage
+Supabase auth fully working
 
 Dependency:
 
-Phase 0 complete
+Supabase credentials ready
 
 ---
 
-# Phase 2 — Session Management System
+# Phase 3 — Session Management
 
-## Objective
-
-Maintain logged-in user state.
-
----
+Supabase handles session.
 
 ## Amogha Tasks
 
-File:
-
-```
-core/session_engine.py
-```
-
 Checklist:
 
-* [ ] Create user session object
-* [ ] Store current_user_id
-* [ ] Enable persistent session
-
-Deliverable:
-
-User session maintained
-
-Dependency:
-
-Phase 1 complete
+* [ ] Store current user
+* [ ] Route authenticated users to home
+* [ ] Prevent unauthenticated access
 
 ---
 
-## Muneer Tasks
-
-File:
-
-```
-security/sanitizer.py
-```
-
-Checklist:
-
-* [ ] Validate login inputs
-* [ ] Validate registration inputs
-
-Deliverable:
-
-Secure authentication inputs
-
-Dependency:
-
-Phase 1 complete
-
----
-
-# Phase 3 — Medical Intake & Assessment System
-
-## Objective
-
-Collect medical and lifestyle data.
-
----
+# Phase 4 — Medical Intake System
 
 ## Amogha Tasks
 
@@ -209,48 +243,24 @@ Checklist:
 
 Collect:
 
-Profile:
+* Profile data
+* Pain data
+* Lifestyle data
+* Diet data
+* Psychometric data
+* Image upload
 
-* [ ] Age
-* [ ] Gender
-* [ ] Language
+Upload image to Supabase Storage bucket.
 
-Pain:
-
-* [ ] Pain location
-* [ ] Pain level
-* [ ] Duration
-
-Lifestyle:
-
-* [ ] Occupation
-* [ ] Sitting hours
-* [ ] Commute type
-* [ ] Gym usage
-
-Diet:
-
-* [ ] Diet preference
-* [ ] Dairy intake
-* [ ] Meals per day
-
-Psychometric:
-
-* [ ] Motivation level
-* [ ] Discipline level
-* [ ] Sleep duration
-
-Image:
-
-* [ ] Injury photo upload
+Store image URL in database.
 
 Deliverable:
 
-Structured assessment_data
+Assessment stored in Supabase
 
 Dependency:
 
-Phase 2 complete
+Auth working
 
 ---
 
@@ -264,26 +274,13 @@ ai/image_analysis.py
 
 Checklist:
 
-* [ ] Validate image
-* [ ] Preprocess image
-
-Deliverable:
-
-Safe image pipeline
-
-Dependency:
-
-Assessment image upload exists
+* [ ] Accept Supabase image URL
+* [ ] Download image
+* [ ] Process image
 
 ---
 
-# Phase 4 — MedGemma Integration
-
-## Objective
-
-Enable AI reasoning.
-
----
+# Phase 5 — MedGemma Integration
 
 ## Muneer Tasks
 
@@ -295,22 +292,8 @@ ai/medgemma.py
 
 Checklist:
 
-* [ ] Load MedGemma model
-* [ ] Implement inference function
-
-Function:
-
-```
-generate_response(prompt)
-```
-
-Deliverable:
-
-Working AI inference
-
-Dependency:
-
-Foundation complete
+* [ ] Load MedGemma
+* [ ] Generate response
 
 ---
 
@@ -324,25 +307,11 @@ ai/prompt_builder.py
 
 Checklist:
 
-* [ ] Convert assessment_data → prompt
-
-Deliverable:
-
-Medical prompt structure
-
-Dependency:
-
-Assessment complete
+* [ ] Build prompt from assessment
 
 ---
 
-# Phase 5 — Plan Generation System
-
-## Objective
-
-Generate rehab + diet plan.
-
----
+# Phase 6 — Plan Generation
 
 ## Amogha Tasks
 
@@ -354,42 +323,12 @@ ai/plan_generator.py
 
 Checklist:
 
-* [ ] Call medgemma
-* [ ] Convert response → structured plan
-
-Deliverable:
-
-Plan object created
-
-Dependency:
-
-MedGemma working
+* [ ] Generate structured plan
+* [ ] Save plan to Supabase
 
 ---
 
-## Muneer Tasks
-
-File:
-
-```
-core/concurrency.py
-```
-
-Checklist:
-
-* [ ] Implement ThreadPoolExecutor
-
-Deliverable:
-
-Concurrent inference
-
-Dependency:
-
-MedGemma working
-
----
-
-# Phase 6 — Plan Display UI
+# Phase 7 — Plan Display
 
 ## Amogha Tasks
 
@@ -401,20 +340,12 @@ ui/plan.py
 
 Checklist:
 
-* [ ] Display exercises
-* [ ] Display diet
-
-Deliverable:
-
-Plan visible to user
-
-Dependency:
-
-Plan generation complete
+* [ ] Show exercises
+* [ ] Show diet
 
 ---
 
-# Phase 7 — Guided Rehab Session System
+# Phase 8 — Rehab Session Engine
 
 ## Amogha Tasks
 
@@ -426,34 +357,18 @@ ui/session.py
 
 Checklist:
 
-* [ ] Show exercise
-* [ ] Show timer
-* [ ] Track completion
-
-Deliverable:
-
-Exercise session working
-
-Dependency:
-
-Plan display working
+* [ ] Exercise timer
+* [ ] Completion tracking
 
 ---
 
-# Phase 8 — Progress Tracking System
+# Phase 9 — Progress Tracking
 
 ## Muneer Tasks
 
-File:
-
-```
-core/database.py
-```
-
 Checklist:
 
-* [ ] Save progress
-* [ ] Load progress
+* [ ] Save progress to Supabase
 
 ---
 
@@ -467,15 +382,11 @@ ui/progress.py
 
 Checklist:
 
-* [ ] Show recovery graphs
-
-Dependency:
-
-Progress saving working
+* [ ] Show progress
 
 ---
 
-# Phase 9 — Plan Adaptation System
+# Phase 10 — Plan Adaptation
 
 ## Amogha Tasks
 
@@ -487,15 +398,11 @@ ai/plan_adapter.py
 
 Checklist:
 
-* [ ] Modify plan based on progress
-
-Dependency:
-
-Progress tracking working
+* [ ] Update plan
 
 ---
 
-# Phase 10 — Report Generator
+# Phase 11 — Report Generation
 
 ## Muneer Tasks
 
@@ -507,7 +414,7 @@ core/report_generator.py
 
 Checklist:
 
-* [ ] Generate PDF report
+* [ ] Generate report
 
 ---
 
@@ -523,53 +430,71 @@ Checklist:
 
 * [ ] Export report UI
 
-Dependency:
+---
 
-Report generator complete
+# Forgot Password Flow (Supabase Native)
+
+Flow:
+
+```
+User clicks Forgot Password
+↓
+User enters email
+↓
+Supabase sends reset email
+↓
+User resets password
+↓
+User logs in normally
+```
+
+---
+
+# Storage Architecture
+
+Supabase Storage:
+
+```
+Bucket: injury-images
+```
+
+Store:
+
+* Injury photos
+
+Save URL in assessments table
 
 ---
 
 # Final Integration Checklist
 
-Full flow must work:
-
-* [ ] User registers
-* [ ] User logs in
-* [ ] User completes assessment
-* [ ] User uploads image
-* [ ] AI generates plan
-* [ ] User performs session
-* [ ] Timer works
-* [ ] Progress saved
-* [ ] Plan adapts
-* [ ] Report exports
+* [ ] Register
+* [ ] Login
+* [ ] Forgot password
+* [ ] Assessment
+* [ ] Image upload
+* [ ] Plan generation
+* [ ] Session
+* [ ] Progress tracking
+* [ ] Report export
 
 ---
 
-# Authority and Ownership
+# Authority
 
 Amogha owns:
 
 * UI
 * Prompt logic
-* Plan generation
-* Integration
+* Plan logic
 
 Muneer owns:
 
-* MedGemma integration
-* Database
+* Supabase integration
+* MedGemma
+* Storage
 * Security
-* Concurrency
 
 ---
 
-# Execution Rule
-
-Always build in flow order.
-
-Never skip phases.
-
-Never mix responsibilities.
-
-This ensures production-grade architecture and hackathon-winning quality.
+This is now fully production-ready architecture using Supabase.
