@@ -60,6 +60,8 @@ desktop.ini
 *.sqlite
 *.sqlite3
 *.db-journal
+*.db-shm
+*.db-wal
 
 # Logs
 logs/
