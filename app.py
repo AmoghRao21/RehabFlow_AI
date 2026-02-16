@@ -15,7 +15,6 @@ from prompts import (
     INITIAL_PLAN_USER_TEMPLATE,
     PROGRESS_UPDATE_PROMPT,
     PDF_SUMMARY_PROMPT,
-    DEMO_PLANS,
 )
 from utils import (
     save_plan,
@@ -196,7 +195,7 @@ CUSTOM_CSS = """
 
 # ── Global State ───────────────────────────────────────────────
 
-MODEL_STATE = {"processor": None, "model": None, "loaded": False, "demo_mode": True}
+MODEL_STATE = {"processor": None, "model": None, "loaded": False}
 
 EXAMPLE_INPUTS = {
     "🦵 Knee Osteoarthritis": {
@@ -236,7 +235,7 @@ def get_status_html():
     if MODEL_STATE["loaded"]:
         return '<span class="status-badge badge-online">🟢 MedGemma Loaded</span>'
     else:
-        return '<span class="status-badge badge-demo">🟡 Demo Mode — Using Sample Plans</span>'
+        return '<span class="status-badge badge-demo">⚪ Not Loaded</span>'
 
 
 def try_load_model(progress=gr.Progress()):
@@ -251,13 +250,13 @@ def try_load_model(progress=gr.Progress()):
         MODEL_STATE["processor"] = processor
         MODEL_STATE["model"] = model
         MODEL_STATE["loaded"] = True
-        MODEL_STATE["demo_mode"] = False
+
         progress(1.0, desc="Model loaded!")
         return "✅ MedGemma loaded successfully! GPU inference ready.", get_status_html()
     else:
-        MODEL_STATE["demo_mode"] = True
-        progress(1.0, desc="Using demo mode")
-        return "⚠️ Model not available. Using Demo Mode with pre-built plans.", get_status_html()
+
+        progress(1.0, desc="Model loading failed")
+        return "❌ Model loading failed. Please check your HF_TOKEN in .env file and ensure you have access to google/medgemma-1.5-4b-it.", get_status_html()
 
 
 def generate_plan(patient_name, condition, symptoms, pain_level, image, progress=gr.Progress()):
@@ -281,32 +280,22 @@ def generate_plan(patient_name, condition, symptoms, pain_level, image, progress
     full_prompt = INITIAL_PLAN_SYSTEM_PROMPT + "\n\n" + user_prompt
 
     # Try model inference
-    plan_text = None
-    if MODEL_STATE["loaded"] and not MODEL_STATE["demo_mode"]:
-        progress(0.3, desc="Running MedGemma inference (this may take 30-60s)...")
-        pil_image = Image.open(image) if image else None
-        plan_text = run_medgemma(
-            MODEL_STATE["processor"],
-            MODEL_STATE["model"],
-            full_prompt,
-            image=pil_image,
-            max_tokens=1200,
-        )
-
-    # Fallback to demo plans
+    if not MODEL_STATE["loaded"]:
+        return "❌ **Error**: MedGemma model is not loaded. Please click '🚀 Load MedGemma' button above to load the model first.", None
+    
+    progress(0.3, desc="Running MedGemma inference (this may take 30-60s)...")
+    pil_image = Image.open(image) if image else None
+    plan_text = run_medgemma(
+        MODEL_STATE["processor"],
+        MODEL_STATE["model"],
+        full_prompt,
+        image=pil_image,
+        max_tokens=1500,
+    )
+    
     if plan_text is None:
-        progress(0.5, desc="Using demo mode...")
-        # Find closest matching demo plan
-        condition_lower = condition.lower()
-        plan_text = None
-        for key, demo in DEMO_PLANS.items():
-            if any(word in condition_lower for word in key.lower().split()):
-                plan_text = demo
-                break
-        if plan_text is None:
-            # Default to most common
-            plan_text = list(DEMO_PLANS.values())[0]
-        plan_text = f"> 🟡 **Demo Mode** — This plan was generated from pre-built templates.\n> Load MedGemma for personalized AI-generated plans.\n\n{plan_text}"
+        return "❌ **Error**: Model inference failed. Please try again or check your setup.", None
+
 
     progress(0.9, desc="Formatting plan...")
 
@@ -377,57 +366,20 @@ def update_plan_with_progress(plan_id, today_pain, progress_notes, voice_input, 
     )
 
     # Try model inference
-    updated_text = None
-    if MODEL_STATE["loaded"] and not MODEL_STATE["demo_mode"]:
-        progress(0.4, desc="Running MedGemma inference...")
-        updated_text = run_medgemma(
-            MODEL_STATE["processor"],
-            MODEL_STATE["model"],
-            INITIAL_PLAN_SYSTEM_PROMPT + "\n\n" + update_prompt,
-            max_tokens=1000,
-        )
+    if not MODEL_STATE["loaded"]:
+        return "❌ **Error**: MedGemma model is not loaded. Please click '🚀 Load MedGemma' button above to load the model first."
+    
+    progress(0.4, desc="Running MedGemma inference...")
+    updated_text = run_medgemma(
+        MODEL_STATE["processor"],
+        MODEL_STATE["model"],
+        INITIAL_PLAN_SYSTEM_PROMPT + "\n\n" + update_prompt,
+        max_tokens=1000,
+    )
 
     if updated_text is None:
-        progress(0.6, desc="Generating demo update...")
-        pain_diff = int(today_pain) - plan.get("pain_level", 5)
-        if pain_diff < -1:
-            assessment = "Great progress! Pain has decreased significantly."
-            adjustment = "Progress to next difficulty level. Increase reps by 2 per set."
-        elif pain_diff > 1:
-            assessment = "Pain has increased. We need to regress the program."
-            adjustment = "Reduce intensity. Drop back to previous week's exercises. Add more rest days."
-        else:
-            assessment = "Steady progress. Pain levels are stable."
-            adjustment = "Maintain current program. Focus on form quality."
+        return "❌ **Error**: Model inference failed. Please try again or check your setup."
 
-        updated_text = f"""> 🟡 **Demo Mode** — Progress update generated from templates.
-
-#### 📊 Progress Assessment
-{assessment}
-- **Original Pain:** {plan.get('pain_level', '?')}/10
-- **Today's Pain:** {int(today_pain)}/10
-- **Days Elapsed:** {days}
-- **Patient Notes:** {notes}
-
-#### 🔄 Plan Adjustments
-{adjustment}
-
-| Change | Previous | Updated | Reason |
-|--------|----------|---------|--------|
-| Intensity | Current level | {'Decreased' if pain_diff > 1 else 'Increased' if pain_diff < -1 else 'Maintained'} | Pain {'increased' if pain_diff > 1 else 'decreased' if pain_diff < -1 else 'stable'} |
-| Rest days | As prescribed | {'Add 1 extra' if pain_diff > 1 else 'Can reduce by 1' if pain_diff < -2 else 'Keep same'} | Based on recovery |
-
-#### ⚠️ Watch For
-- Pain exceeding 7/10 during any exercise
-- New symptoms (numbness, tingling, weakness)
-- Swelling that doesn't resolve within 24 hours
-
-#### 💬 Patient Guidance
-{'Take it easy — your body needs more time to adapt. Focus on pain-free movements only.' if pain_diff > 1 else 'Excellent work! Your body is responding well. Keep up the consistency.' if pain_diff < -1 else 'You are on track. Stay consistent with your exercises and tracking.'}
-
-#### ⚕️ Disclaimer
-> This adaptation is AI-generated for educational purposes only. Consult your healthcare provider before making changes to your rehabilitation program.
-"""
 
     # Save the update
     add_progress_update(plan_id, {
@@ -545,7 +497,7 @@ def create_app():
                 load_model_btn = gr.Button("🚀 Load MedGemma", elem_classes=["primary-btn"], size="sm")
             with gr.Column(scale=1, min_width=200):
                 model_status_text = gr.Textbox(
-                    value="Demo Mode active" if MODEL_STATE["demo_mode"] else "Model loaded",
+                    value="Not loaded" if not MODEL_STATE["loaded"] else "Model loaded",
                     label="Status",
                     interactive=False,
                     max_lines=1,

@@ -63,43 +63,53 @@ def run_medgemma(
     model,
     prompt: str,
     image: Image.Image = None,
-    max_tokens: int = 1200,
+    max_tokens: int = 1500,
 ):
     """
-    Run inference on MedGemma with optional image input.
+    Run inference on MedGemma with optional image input using official chat template.
     
+    Uses the official MedGemma 1.5 chat template for higher accuracy.
     Returns the decoded text string.
     """
     if processor is None or model is None:
         return None  # Caller should use demo mode
     
     try:
-        if image:
-            inputs = processor(
-                text=prompt, images=image, return_tensors="pt"
-            ).to(model.device)
-        else:
-            inputs = processor(
-                text=prompt, return_tensors="pt"
-            ).to(model.device)
-        
+        # Official chat template for MedGemma 1.5 (much higher accuracy)
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": image} if image else None,
+                    {"type": "text", "text": prompt}
+                ]
+            }
+        ]
+        # Remove None if no image
+        messages[0]["content"] = [item for item in messages[0]["content"] if item is not None]
+
+        inputs = processor.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt"
+        ).to(model.device)
+
         with torch.inference_mode():
-            outputs = model.generate(
+            generation = model.generate(
                 **inputs,
                 max_new_tokens=max_tokens,
-                temperature=0.75,
+                temperature=0.7,
                 do_sample=True,
                 top_p=0.9,
-                pad_token_id=processor.tokenizer.pad_token_id,
+                pad_token_id=processor.tokenizer.pad_token_id
             )
         
-        decoded = processor.decode(outputs[0], skip_special_tokens=True)
-        
-        # Strip the input prompt from output if echoed
-        if decoded.startswith(prompt):
-            decoded = decoded[len(prompt):].strip()
-        
-        return decoded
+        # Extract only the new tokens
+        input_len = inputs["input_ids"].shape[-1]
+        generated_tokens = generation[0][input_len:]
+        return processor.decode(generated_tokens, skip_special_tokens=True)
     
     except Exception as e:
         print(f"[RehabFlow] ⚠ Inference error: {e}")
