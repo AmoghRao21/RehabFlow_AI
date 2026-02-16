@@ -2,19 +2,19 @@
 
 This checklist defines the **full production execution plan** for RehabFlow AI using:
 
-* **uv** for Python environment
-* **Gradio** for UI
-* **MedGemma** for AI
-* **Supabase (PostgreSQL)** for Database
-* **Supabase Auth** for Authentication
-* **Supabase Storage** for Image Storage
+- **uv** for Python environment
+- **Gradio** for UI
+- **MedGemma** for AI
+- **Supabase (PostgreSQL)** for Database
+- **Supabase Auth** for Authentication
+- **Supabase Storage** for Image Storage
 
 This replaces SQLite-based architecture.
 
 Team:
 
-* **Amogha** — Product Architect, UI/UX Lead, AI Logic Lead, Integration Lead
-* **Muneer** — Infrastructure Lead, MedGemma Integration, Supabase Integration, Concurrency, Security
+- **Amogha** — Product Architect, UI/UX Lead, AI Logic Lead, Integration Lead
+- **Muneer** — Infrastructure Lead, MedGemma Integration, Supabase Integration, Concurrency, Security
 
 ---
 
@@ -22,9 +22,9 @@ Team:
 
 Completed:
 
-* [x] uv project initialized
-* [x] Dependencies installed
-* [x] Gradio base app running
+- [x] uv project initialized
+- [x] Dependencies installed
+- [x] Gradio base app running
 
 ---
 
@@ -36,10 +36,10 @@ Configure Supabase as the primary backend.
 
 Supabase will handle:
 
-* Authentication
-* PostgreSQL Database
-* Image Storage
-* Password reset
+- Authentication
+- PostgreSQL Database
+- Image Storage
+- Password reset
 
 ---
 
@@ -47,24 +47,10 @@ Supabase will handle:
 
 Checklist:
 
-* [ ] Create Supabase project
-* [ ] Enable Email authentication
-* [ ] Enable password reset
-* [ ] Create storage bucket:
-
-```
-injury-images
-```
-
-* [ ] Get credentials:
-
-```
-SUPABASE_URL
-SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-```
-
-* [ ] Store in `.env`
+- [x] Create Supabase project
+- [x] Get credentials (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY)
+- [x] Store in `.env`
+- [x] Add Supabase Python client dependency (`supabase>=2.4.0`)
 
 Deliverable:
 
@@ -135,10 +121,10 @@ created_at
 
 Supabase handles:
 
-* Registration
-* Login
-* Session management
-* Forgot password
+- Registration
+- Login
+- Session management
+- Forgot password
 
 ---
 
@@ -156,24 +142,24 @@ Create tabs:
 
 Login Tab:
 
-* [ ] Email input
-* [ ] Password input
-* [ ] Login button
-* [ ] Forgot Password button
+- [ ] Email input
+- [ ] Password input
+- [ ] Login button
+- [ ] Forgot Password button
 
 Register Tab:
 
-* [ ] Name
-* [ ] Age
-* [ ] Email
-* [ ] Password
-* [ ] Register button
+- [ ] Name
+- [ ] Age
+- [ ] Email
+- [ ] Password
+- [ ] Register button
 
 Forgot Password Flow:
 
-* [ ] Email input
-* [ ] Send reset request
-* [ ] Show success message
+- [ ] Email input
+- [ ] Send reset request
+- [ ] Show success message
 
 Deliverable:
 
@@ -195,23 +181,22 @@ core/supabase_client.py
 
 Checklist:
 
-Implement:
-
-```
-sign_up()
-sign_in()
-sign_out()
-reset_password()
-get_current_user()
-```
+- [x] Create `SupabaseClient` class
+- [x] Implement `sign_up()` with email/password and metadata
+- [x] Implement `sign_in()` with email/password
+- [x] Implement `sign_out()`
+- [x] Implement `reset_password()` (sends reset email)
+- [x] Implement `get_current_user()`
+- [x] Expose `get_supabase_client()` helper from `core` package
+- [x] Add Supabase config to `utils/config.py` (URL, keys, bucket)
 
 Deliverable:
 
-Supabase auth fully working
+Supabase auth fully working ✅ (backend ready, UI pending from Amogha)
 
 Dependency:
 
-Supabase credentials ready
+Supabase credentials ready ✅
 
 ---
 
@@ -223,9 +208,9 @@ Supabase handles session.
 
 Checklist:
 
-* [ ] Store current user
-* [ ] Route authenticated users to home
-* [ ] Prevent unauthenticated access
+- [ ] Store current user
+- [ ] Route authenticated users to home
+- [ ] Prevent unauthenticated access
 
 ---
 
@@ -243,12 +228,12 @@ Checklist:
 
 Collect:
 
-* Profile data
-* Pain data
-* Lifestyle data
-* Diet data
-* Psychometric data
-* Image upload
+- Profile data
+- Pain data
+- Lifestyle data
+- Diet data
+- Psychometric data
+- Image upload
 
 Upload image to Supabase Storage bucket.
 
@@ -274,9 +259,9 @@ ai/image_analysis.py
 
 Checklist:
 
-* [ ] Accept Supabase image URL
-* [ ] Download image
-* [ ] Process image
+- [ ] Accept Supabase image URL
+- [ ] Download image
+- [ ] Process image
 
 ---
 
@@ -292,8 +277,8 @@ ai/medgemma.py
 
 Checklist:
 
-* [ ] Load MedGemma
-* [ ] Generate response
+- [ ] Load MedGemma
+- [ ] Generate response
 
 ---
 
@@ -307,7 +292,7 @@ ai/prompt_builder.py
 
 Checklist:
 
-* [ ] Build prompt from assessment
+- [ ] Build prompt from assessment
 
 ---
 
@@ -323,8 +308,8 @@ ai/plan_generator.py
 
 Checklist:
 
-* [ ] Generate structured plan
-* [ ] Save plan to Supabase
+- [ ] Generate structured plan
+- [ ] Save plan to Supabase
 
 ---
 
@@ -340,8 +325,8 @@ ui/plan.py
 
 Checklist:
 
-* [ ] Show exercises
-* [ ] Show diet
+- [ ] Show exercises
+- [ ] Show diet
 
 ---
 
@@ -357,8 +342,8 @@ ui/session.py
 
 Checklist:
 
-* [ ] Exercise timer
-* [ ] Completion tracking
+- [ ] Exercise timer
+- [ ] Completion tracking
 
 ---
 
@@ -368,7 +353,7 @@ Checklist:
 
 Checklist:
 
-* [ ] Save progress to Supabase
+- [ ] Save progress to Supabase
 
 ---
 
@@ -382,7 +367,7 @@ ui/progress.py
 
 Checklist:
 
-* [ ] Show progress
+- [ ] Show progress
 
 ---
 
@@ -398,7 +383,7 @@ ai/plan_adapter.py
 
 Checklist:
 
-* [ ] Update plan
+- [ ] Update plan
 
 ---
 
@@ -414,7 +399,7 @@ core/report_generator.py
 
 Checklist:
 
-* [ ] Generate report
+- [ ] Generate report
 
 ---
 
@@ -428,7 +413,7 @@ ui/report.py
 
 Checklist:
 
-* [ ] Export report UI
+- [ ] Export report UI
 
 ---
 
@@ -460,7 +445,7 @@ Bucket: injury-images
 
 Store:
 
-* Injury photos
+- Injury photos
 
 Save URL in assessments table
 
@@ -468,15 +453,15 @@ Save URL in assessments table
 
 # Final Integration Checklist
 
-* [ ] Register
-* [ ] Login
-* [ ] Forgot password
-* [ ] Assessment
-* [ ] Image upload
-* [ ] Plan generation
-* [ ] Session
-* [ ] Progress tracking
-* [ ] Report export
+- [ ] Register
+- [ ] Login
+- [ ] Forgot password
+- [ ] Assessment
+- [ ] Image upload
+- [ ] Plan generation
+- [ ] Session
+- [ ] Progress tracking
+- [ ] Report export
 
 ---
 
@@ -484,16 +469,16 @@ Save URL in assessments table
 
 Amogha owns:
 
-* UI
-* Prompt logic
-* Plan logic
+- UI
+- Prompt logic
+- Plan logic
 
 Muneer owns:
 
-* Supabase integration
-* MedGemma
-* Storage
-* Security
+- Supabase integration
+- MedGemma
+- Storage
+- Security
 
 ---
 
