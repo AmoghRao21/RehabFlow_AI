@@ -1,0 +1,49 @@
+services:
+  backend:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    container_name: rehabflow-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../../.env
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - rehabflow-network
+
+  frontend:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+    container_name: rehabflow-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../../.env
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - rehabflow-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rehabflow-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - rehabflow-network
+
+volumes:
+  redis-data:
+
+
+networks:
+  rehabflow-network:
+    driver: bridge
