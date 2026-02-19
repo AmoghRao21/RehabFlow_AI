@@ -4,3 +4,5 @@ pydantic-settings
 supabase
 redis
 python-dotenv
+httpx
+PyJWT[crypto]

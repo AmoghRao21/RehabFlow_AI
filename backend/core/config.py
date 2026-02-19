@@ -13,8 +13,9 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_anon_key: str
     supabase_service_key: str
+    supabase_jwt_secret: str
     redis_url: str
-    modal_endpoint: str
+    modal_endpoint: str = ""
     environment: str = "development"
     log_level: str = "INFO"
 

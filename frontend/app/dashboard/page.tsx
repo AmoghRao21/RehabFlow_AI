@@ -42,7 +42,7 @@ export default function DashboardPage() {
                 // Fetch latest injury assessment
                 const { data: assessmentData } = await supabase
                     .from("injury_assessments")
-                    .select("*")
+                    .select("*, ai_clinical_analysis(*)")
                     .eq("user_id", user.id)
                     .order("created_at", { ascending: false })
                     .limit(1)
@@ -60,6 +60,44 @@ export default function DashboardPage() {
 
         fetchData();
     }, [user]);
+
+    const handleRunAnalysis = async () => {
+        if (!assessment || !user) return;
+
+        try {
+            // Get session for JWT
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData.session?.access_token;
+
+            if (!token) throw new Error("No access token found");
+
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const response = await fetch(`${API_URL}/ai/analyze/${assessment.id}`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Analysis failed");
+            }
+
+            const analysisResult = await response.json();
+
+            // Optimistically update state
+            setAssessment((prev: any) => ({
+                ...prev,
+                ai_clinical_analysis: [analysisResult]
+            }));
+
+        } catch (err) {
+            console.error("AI Analysis failed:", err);
+            alert("Failed to run AI analysis. Please try again.");
+        }
+    };
 
     return (
         <ProtectedRoute>
@@ -98,6 +136,7 @@ export default function DashboardPage() {
                         <InjuryStatusCard
                             assessment={assessment}
                             loading={loading}
+                            onRunAnalysis={handleRunAnalysis}
                         />
 
                         {/* Creates a full-width row on desktop */}
