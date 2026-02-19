@@ -6,8 +6,7 @@
 -- ======================== ENUM TYPES =========================
 
 CREATE TYPE pain_location_enum AS ENUM (
-    'knee', 'shoulder', 'lower_back', 'neck',
-    'ankle', 'wrist', 'hip', 'elbow', 'other'
+    'knee', 'shoulder', 'lower_back', 'neck','upper_back','ankle', 'wrist', 'hip', 'elbow','foot','other'
 );
 
 CREATE TYPE habit_frequency_enum AS ENUM (
