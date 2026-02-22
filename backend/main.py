@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.health import router as health_router
 from routes.ai import router as ai_router
+from routes.youtube import router as youtube_router
 from core.config import get_settings
 from core.logger import get_logger
 from db.redis import close_redis_client, get_redis_client
@@ -53,3 +54,4 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(ai_router)
+app.include_router(youtube_router)
