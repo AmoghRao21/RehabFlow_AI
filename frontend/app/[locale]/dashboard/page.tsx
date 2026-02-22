@@ -10,9 +10,14 @@ import WelcomeCard from "@/components/dashboard/WelcomeCard";
 import HealthMetricsCard from "@/components/dashboard/HealthMetricsCard";
 import InjuryStatusCard from "@/components/dashboard/InjuryStatusCard";
 import GamificationCard from "@/components/dashboard/GamificationCard";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLocaleRedirect } from "@/hooks/useLocaleRedirect";
 
 export default function DashboardPage() {
+    const t = useTranslations("dashboard");
     const { user, signOut } = useAuth();
+    useLocaleRedirect();
     const [profile, setProfile] = useState<any>(null);
     const [baseline, setBaseline] = useState<any>(null);
     const [assessment, setAssessment] = useState<any>(null);
@@ -39,14 +44,36 @@ export default function DashboardPage() {
                     .limit(1)
                     .single();
 
-                // Fetch latest injury assessment
+                // Fetch latest injury assessment (without ai_clinical_analysis join)
                 const { data: assessmentData } = await supabase
                     .from("injury_assessments")
-                    .select("*, ai_clinical_analysis(*)")
+                    .select("*")
                     .eq("user_id", user.id)
                     .order("created_at", { ascending: false })
                     .limit(1)
                     .single();
+
+                // Fetch translated analysis from backend API
+                if (assessmentData) {
+                    const { data: sessionData } = await supabase.auth.getSession();
+                    const token = sessionData.session?.access_token;
+                    if (token) {
+                        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+                        try {
+                            const res = await fetch(`${API_URL}/ai/analysis/${assessmentData.id}`, {
+                                headers: { "Authorization": `Bearer ${token}` },
+                            });
+                            if (res.ok) {
+                                const analysisResult = await res.json();
+                                assessmentData.ai_clinical_analysis = [analysisResult];
+                            } else {
+                                assessmentData.ai_clinical_analysis = [];
+                            }
+                        } catch {
+                            assessmentData.ai_clinical_analysis = [];
+                        }
+                    }
+                }
 
                 setProfile(profileData);
                 setBaseline(baselineData);
@@ -109,16 +136,19 @@ export default function DashboardPage() {
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 font-bold text-white">
                                 R
                             </div>
-                            <span className="text-lg font-bold text-slate-900">RehabFlow AI</span>
+                            <span className="text-lg font-bold text-slate-900">{t('appName')}</span>
                         </div>
 
-                        <button
-                            onClick={signOut}
-                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        >
-                            <LogOut className="h-4 w-4" />
-                            <span className="hidden sm:inline">Sign Out</span>
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <LanguageSwitcher />
+                            <button
+                                onClick={signOut}
+                                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                            >
+                                <LogOut className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('signOut')}</span>
+                            </button>
+                        </div>
                     </div>
                 </nav>
 

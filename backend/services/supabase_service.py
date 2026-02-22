@@ -154,3 +154,52 @@ async def insert_clinical_analysis(
         )
 
     return response.data[0]
+
+
+# ── User language preference ────────────────────────────────────
+
+async def fetch_user_language(user_id: str) -> str:
+    """
+    Return the user's preferred language code from ``profiles.language``.
+
+    Falls back to ``"en"`` if the profile doesn't exist or ``language``
+    is ``NULL``.
+    """
+    client = get_supabase_client()
+
+    response = (
+        client.table("profiles")
+        .select("language")
+        .eq("id", user_id)
+        .maybe_single()
+        .execute()
+    )
+
+    if response.data and response.data.get("language"):
+        return response.data["language"]
+
+    return "en"
+
+
+# ── Fetch existing analysis ────────────────────────────────────
+
+async def fetch_clinical_analysis(
+    injury_assessment_id: str,
+) -> dict[str, Any] | None:
+    """
+    Fetch the latest AI clinical analysis for *injury_assessment_id*.
+
+    Returns the row as a dict, or ``None`` if no analysis exists.
+    """
+    client = get_supabase_client()
+
+    response = (
+        client.table("ai_clinical_analysis")
+        .select("*")
+        .eq("injury_assessment_id", injury_assessment_id)
+        .order("created_at", desc=True)
+        .maybe_single()
+        .execute()
+    )
+
+    return response.data

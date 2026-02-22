@@ -5,6 +5,7 @@ import { Upload, Xmark, MediaImage } from "iconoir-react";
 import Image from "next/image";
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
+import { useTranslations } from "next-intl";
 
 interface StepFourImageUploadProps {
     images: File[];
@@ -12,11 +13,10 @@ interface StepFourImageUploadProps {
 }
 
 export default function StepFourImageUpload({ images, updateImages }: StepFourImageUploadProps) {
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-        // Validate size manually if needed, though useDropzone handles it
-        const validFiles = acceptedFiles.filter(file => file.size <= 5 * 1024 * 1024);
+    const t = useTranslations("assessment");
 
-        // Append new files to existing ones
+    const onDrop = useCallback((acceptedFiles: File[]) => {
+        const validFiles = acceptedFiles.filter(file => file.size <= 5 * 1024 * 1024);
         updateImages([...images, ...validFiles]);
     }, [images, updateImages]);
 
@@ -27,7 +27,7 @@ export default function StepFourImageUpload({ images, updateImages }: StepFourIm
             'image/png': [],
             'image/webp': []
         },
-        maxSize: 5 * 1024 * 1024, // 5MB
+        maxSize: 5 * 1024 * 1024,
         multiple: true
     });
 
@@ -45,10 +45,9 @@ export default function StepFourImageUpload({ images, updateImages }: StepFourIm
             className="space-y-8"
         >
             <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-slate-900">Upload Injury Images</h3>
+                <h3 className="text-lg font-semibold text-slate-900">{t('uploadTitle')}</h3>
                 <p className="text-sm text-slate-500">
-                    Upload photos of your injury to help our AI analyze the condition.
-                    (Max 5MB per image, JPG/PNG/WEBP only)
+                    {t('uploadSubtitle')}
                 </p>
 
                 {/* Dropzone */}
@@ -67,10 +66,10 @@ export default function StepFourImageUpload({ images, updateImages }: StepFourIm
                         </div>
                         <div className="space-y-1">
                             <p className="font-medium text-slate-900">
-                                {isDragActive ? "Drop images here" : "Click or drag images to upload"}
+                                {isDragActive ? t('dropHere') : t('clickOrDrag')}
                             </p>
                             <p className="text-xs text-slate-500">
-                                Supports: JPG, PNG, WEBP (Max 5MB)
+                                {t('supportedFormats')}
                             </p>
                         </div>
                     </div>
@@ -98,7 +97,6 @@ export default function StepFourImageUpload({ images, updateImages }: StepFourIm
                                     fill
                                     className="object-cover"
                                     onLoad={(e) => {
-                                        // Revoke object URL to avoid memory leaks
                                         URL.revokeObjectURL((e.target as HTMLImageElement).src);
                                     }}
                                 />
@@ -122,7 +120,7 @@ export default function StepFourImageUpload({ images, updateImages }: StepFourIm
                 {images.length === 0 && (
                     <div className="flex flex-col items-center justify-center rounded-xl border border-slate-100 bg-white py-12 text-slate-400">
                         <MediaImage className="mb-2 h-10 w-10 opacity-20" />
-                        <p className="text-sm">No images selected yet</p>
+                        <p className="text-sm">{t('noImagesSelected')}</p>
                     </div>
                 )}
             </div>

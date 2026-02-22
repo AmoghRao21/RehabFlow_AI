@@ -11,7 +11,10 @@ interface InjuryStatusCardProps {
     onRunAnalysis?: () => Promise<void>;
 }
 
+import { useTranslations } from "next-intl";
+
 export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }: InjuryStatusCardProps) {
+    const t = useTranslations("dashboard");
     const [analyzing, setAnalyzing] = useState(false);
 
     if (loading) {
@@ -29,15 +32,15 @@ export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }:
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                     <ReportColumns className="h-8 w-8" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">No Active Assessment</h3>
+                <h3 className="text-lg font-semibold text-slate-900">{t('noActiveAssessment')}</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                    Assess your injury to generate a personalized rehab plan.
+                    {t('noActiveAssessmentDescription')}
                 </p>
                 <Link
                     href="/assessment"
                     className="mt-6 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                 >
-                    Start Assessment <ArrowRight className="h-4 w-4" />
+                    {t('startAssessmentButton')} <ArrowRight className="h-4 w-4" />
                 </Link>
             </motion.div>
         );
@@ -72,13 +75,13 @@ export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }:
                         <ReportColumns className="h-6 w-6" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold text-slate-900">Current Injury</h2>
-                        <p className="text-sm text-slate-500 capitalize">{assessment.pain_cause || "Assessment"}</p>
+                        <h2 className="text-lg font-bold text-slate-900">{t('currentInjuryTitle')}</h2>
+                        <p className="text-sm text-slate-500 capitalize">{assessment.pain_cause || t('assessmentFallback')}</p>
                     </div>
                 </div>
                 {aiResult ? (
                     <div className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-1 text-xs font-bold text-purple-700">
-                        <Sparks className="h-3.5 w-3.5" /> AI Analyzed
+                        <Sparks className="h-3.5 w-3.5" /> {t('aiAnalyzedLabel')}
                     </div>
                 ) : (
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
@@ -89,13 +92,13 @@ export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }:
 
             <div className="mt-6 grid grid-cols-2 gap-4">
                 <div className="rounded-xl border border-slate-100 p-4">
-                    <p className="text-xs font-medium uppercase text-slate-500">Location</p>
+                    <p className="text-xs font-medium uppercase text-slate-500">{t('locationLabel')}</p>
                     <p className="mt-1 text-lg font-semibold text-slate-900 capitalize">
                         {assessment.pain_location.replace("_", " ")}
                     </p>
                 </div>
                 <div className={`rounded-xl border border-slate-100 p-4`}>
-                    <p className="text-xs font-medium uppercase text-slate-500">Pain Level</p>
+                    <p className="text-xs font-medium uppercase text-slate-500">{t('painLevelLabel')}</p>
                     <div className="mt-1 flex items-center gap-2">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${painLevelColor}`}>
                             {assessment.pain_level}/10
@@ -111,26 +114,26 @@ export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }:
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-purple-700">
                                 <Brain className="h-5 w-5" />
-                                <h3 className="font-semibold">Clinical Analysis</h3>
+                                <h3 className="font-semibold">{t('clinicalAnalysisTitle')}</h3>
                             </div>
                             <button
                                 onClick={handleAnalyzeClick}
                                 disabled={analyzing}
                                 className="text-xs font-medium text-slate-400 hover:text-purple-600 disabled:opacity-50"
                             >
-                                {analyzing ? "Updating..." : "Re-analyze"}
+                                {analyzing ? t('updatingButton') : t('reanalyzeButton')}
                             </button>
                         </div>
 
                         <div className="rounded-xl bg-purple-50 p-5 ring-1 ring-purple-100">
                             <h4 className="text-lg font-bold text-purple-900">
-                                {aiResult.probable_condition || "Condition Identified"}
+                                {aiResult.probable_condition || t('conditionIdentifiedFallback')}
                             </h4>
 
                             {/* Confidence Bar */}
                             <div className="mt-3 mb-4">
                                 <div className="mb-1 flex justify-between text-xs font-medium">
-                                    <span className="text-purple-700/80">Confidence Score</span>
+                                    <span className="text-purple-700/80">{t('confidenceScoreLabel')}</span>
                                     <span className="text-purple-900">{Math.round((aiResult.confidence_score || 0) * 100)}%</span>
                                 </div>
                                 <div className="h-2 w-full overflow-hidden rounded-full bg-purple-200/50">
@@ -151,7 +154,7 @@ export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }:
                 ) : (
                     <div className="rounded-xl bg-slate-50 p-6 text-center shadow-inner">
                         <p className="mb-4 text-sm text-slate-500">
-                            Unlock personalized insights with our AI clinical model.
+                            {t('analyzePrompt')}
                         </p>
                         <button
                             onClick={handleAnalyzeClick}
@@ -161,11 +164,11 @@ export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }:
                             {analyzing ? (
                                 <>
                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                    Analyzing Injury...
+                                    {t('analyzingInjuryButton')}
                                 </>
                             ) : (
                                 <>
-                                    <Sparks className="h-4 w-4 text-purple-300" /> Analyze Injury
+                                    <Sparks className="h-4 w-4 text-purple-300" /> {t('analyzeButton')}
                                 </>
                             )}
                         </button>

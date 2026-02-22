@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { User } from "iconoir-react";
+import { useTranslations, useLocale } from "next-intl";
 
 interface WelcomeCardProps {
     fullName: string | null;
@@ -9,7 +10,10 @@ interface WelcomeCardProps {
 }
 
 export default function WelcomeCard({ fullName, loading }: WelcomeCardProps) {
-    const date = new Date().toLocaleDateString("en-US", {
+    const t = useTranslations("dashboard");
+    const locale = useLocale();
+
+    const date = new Date().toLocaleDateString(locale, {
         weekday: "long",
         month: "long",
         day: "numeric",
@@ -28,12 +32,12 @@ export default function WelcomeCard({ fullName, loading }: WelcomeCardProps) {
             className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 p-8 text-white shadow-lg"
         >
             <div className="relative z-10">
-                <p className="mb-2 text-blue-100">{date}</p>
+                <p className="mb-2 text-blue-100 capitalize">{date}</p>
                 <h1 className="text-3xl font-bold">
-                    Welcome back, {fullName || "Patient"}
+                    {t('welcomeTitle', { name: fullName || t('welcomeFallback') })}
                 </h1>
                 <p className="mt-2 max-w-lg text-blue-50">
-                    Your recovery journey continues today. Check your daily tasks and stay consistent.
+                    {t('welcomeSubtitle')}
                 </p>
             </div>
 

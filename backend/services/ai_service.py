@@ -5,7 +5,8 @@ Orchestrates the clinical analysis flow:
   1. Gather all patient context from Supabase.
   2. Download injury images and encode them.
   3. Generate clinical analysis (currently mock / deterministic).
-  4. Persist and return the result.
+  4. Persist result in DB.
+  5. Return the stored result.
 
 NOTE: The Modal call is temporarily replaced with deterministic mock
 logic for local development and testing.  Restore the real Modal
@@ -166,7 +167,7 @@ async def run_clinical_analysis(
         result["confidence_score"],
     )
 
-    # ── 4. Persist ──────────────────────────────────────────────
+    # ── 4. Persist result ───────────────────────────────────────
     stored = await insert_clinical_analysis(
         injury_assessment_id=injury_assessment_id,
         probable_condition=result["probable_condition"],
@@ -176,4 +177,5 @@ async def run_clinical_analysis(
     )
 
     logger.info("Analysis persisted | id=%s", stored.get("id"))
+
     return stored

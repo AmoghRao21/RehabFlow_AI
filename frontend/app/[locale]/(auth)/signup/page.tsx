@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, Link } from "@/i18n/routing";
 import { Mail, Lock, User, Ruler, Weight, InfoCircle, ArrowRight } from "iconoir-react";
 import { motion } from "framer-motion";
 
@@ -20,7 +19,7 @@ export default function SignupPage() {
         gender: "male",
         height: "",
         weight: "",
-        language: "english",
+        language: "en",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -220,35 +219,14 @@ export default function SignupPage() {
                                     onChange={handleChange}
                                     className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-slate-900 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                                 >
-                                    <optgroup label="Common">
-                                        <option value="english">English</option>
-                                        <option value="hindi">Hindi</option>
-                                    </optgroup>
-                                    <optgroup label="Indian Languages">
-                                        <option value="bengali">Bengali</option>
-                                        <option value="telugu">Telugu</option>
-                                        <option value="marathi">Marathi</option>
-                                        <option value="tamil">Tamil</option>
-                                        <option value="urdu">Urdu</option>
-                                        <option value="gujarati">Gujarati</option>
-                                        <option value="kannada">Kannada</option>
-                                        <option value="malayalam">Malayalam</option>
-                                        <option value="punjabi">Punjabi</option>
-                                        <option value="odia">Odia</option>
-                                        <option value="assamese">Assamese</option>
-                                        <option value="maithili">Maithili</option>
-                                        <option value="sanskrit">Sanskrit</option>
-                                    </optgroup>
-                                    <optgroup label="Global Languages">
-                                        <option value="spanish">Spanish</option>
-                                        <option value="french">French</option>
-                                        <option value="german">German</option>
-                                        <option value="chinese">Chinese</option>
-                                        <option value="japanese">Japanese</option>
-                                        <option value="russian">Russian</option>
-                                        <option value="portuguese">Portuguese</option>
-                                        <option value="arabic">Arabic</option>
-                                    </optgroup>
+                                    <option value="en">English</option>
+                                    <option value="hi">हिन्दी (Hindi)</option>
+                                    <option value="fr">Français (French)</option>
+                                    <option value="de">Deutsch (German)</option>
+                                    <option value="ja">日本語 (Japanese)</option>
+                                    <option value="zh">中文 (Chinese)</option>
+                                    <option value="nl">Nederlands (Dutch)</option>
+                                    <option value="ar">العربية (Arabic)</option>
                                 </select>
                             </div>
 

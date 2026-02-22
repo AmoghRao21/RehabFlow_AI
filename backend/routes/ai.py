@@ -5,14 +5,19 @@ POST /ai/analyze/{injury_assessment_id}
   - Requires Bearer JWT (Supabase auth)
   - Runs full clinical analysis pipeline
   - Returns the persisted analysis result
+
+GET /ai/analysis/{injury_assessment_id}
+  - Requires Bearer JWT (Supabase auth)
+  - Returns existing analysis
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from core.auth import get_current_user_id
 from core.logger import get_logger
 from services.ai_service import run_clinical_analysis
+from services.supabase_service import fetch_clinical_analysis
 
 logger = get_logger(__name__)
 
@@ -58,5 +63,28 @@ async def analyze_injury(
         injury_assessment_id=injury_assessment_id,
         user_id=user_id,
     )
+
+    return ClinicalAnalysisResponse(**result)
+
+
+@router.get(
+    "/analysis/{injury_assessment_id}",
+    response_model=ClinicalAnalysisResponse,
+    summary="Get existing AI analysis",
+)
+async def get_analysis(
+    injury_assessment_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> ClinicalAnalysisResponse:
+    """
+    Fetch the existing clinical analysis for the given assessment.
+    """
+    result = await fetch_clinical_analysis(injury_assessment_id)
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No analysis found for this assessment",
+        )
 
     return ClinicalAnalysisResponse(**result)

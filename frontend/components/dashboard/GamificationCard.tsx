@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Medal, FireFlame, Trophy } from "iconoir-react";
+import { useTranslations } from "next-intl";
 
 interface GamificationCardProps {
     profile: any;
@@ -9,6 +10,8 @@ interface GamificationCardProps {
 }
 
 export default function GamificationCard({ profile, loading }: GamificationCardProps) {
+    const t = useTranslations("dashboard");
+
     if (loading) {
         return <div className="h-32 w-full animate-pulse rounded-2xl bg-slate-200"></div>;
     }
@@ -26,8 +29,8 @@ export default function GamificationCard({ profile, loading }: GamificationCardP
                         <Trophy className="h-6 w-6" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold">Your Achievements</h2>
-                        <p className="text-slate-400 text-sm">Keep up the momentum!</p>
+                        <h2 className="text-lg font-bold">{t('achievementsTitle')}</h2>
+                        <p className="text-slate-400 text-sm">{t('momentumMessage')}</p>
                     </div>
                 </div>
 
@@ -38,7 +41,7 @@ export default function GamificationCard({ profile, loading }: GamificationCardP
                         </div>
                         <div>
                             <p className="text-2xl font-bold">{profile?.total_points || 0}</p>
-                            <p className="text-xs text-slate-400 uppercase tracking-wider">Total Points</p>
+                            <p className="text-xs text-slate-400 uppercase tracking-wider">{t('totalPointsLabel')}</p>
                         </div>
                     </div>
 
@@ -50,7 +53,7 @@ export default function GamificationCard({ profile, loading }: GamificationCardP
                         </div>
                         <div>
                             <p className="text-2xl font-bold">{profile?.current_streak || 0}</p>
-                            <p className="text-xs text-slate-400 uppercase tracking-wider">Day Streak</p>
+                            <p className="text-xs text-slate-400 uppercase tracking-wider">{t('dayStreakLabel')}</p>
                         </div>
                     </div>
                 </div>

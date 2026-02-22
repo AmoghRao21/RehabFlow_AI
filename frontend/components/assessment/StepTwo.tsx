@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Check } from "iconoir-react";
 import { supabase } from "@/lib/supabase";
+import { useTranslations } from "next-intl";
 
 interface StepTwoProps {
-    selectedConditions: string[]; // array of IDs
+    selectedConditions: string[];
     updateConditions: (ids: string[]) => void;
 }
 
@@ -17,6 +18,7 @@ interface MedicalCondition {
 }
 
 export default function StepTwo({ selectedConditions, updateConditions }: StepTwoProps) {
+    const t = useTranslations("assessment");
     const [conditions, setConditions] = useState<MedicalCondition[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -65,8 +67,8 @@ export default function StepTwo({ selectedConditions, updateConditions }: StepTw
             className="space-y-6"
         >
             <div>
-                <h3 className="text-lg font-semibold text-slate-900">Medical History</h3>
-                <p className="text-slate-500 text-sm">Select any conditions that apply to you.</p>
+                <h3 className="text-lg font-semibold text-slate-900">{t('medicalHistoryTitle')}</h3>
+                <p className="text-slate-500 text-sm">{t('medicalHistorySubtitle')}</p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -77,8 +79,8 @@ export default function StepTwo({ selectedConditions, updateConditions }: StepTw
                             key={condition.id}
                             onClick={() => toggleCondition(condition.id)}
                             className={`relative flex items-start gap-3 rounded-xl border p-4 text-left transition-all ${isSelected
-                                    ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600"
-                                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                                ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600"
+                                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                                 }`}
                         >
                             <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${isSelected ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white"
@@ -102,7 +104,7 @@ export default function StepTwo({ selectedConditions, updateConditions }: StepTw
 
             {conditions.length === 0 && (
                 <div className="text-center text-slate-500 py-8">
-                    No conditions found. You can proceed if none apply.
+                    {t('noConditions')}
                 </div>
             )}
         </motion.div>

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, Link } from "@/i18n/routing";
 import { Mail, Lock, InfoCircle, ArrowRight } from "iconoir-react";
 import { motion } from "framer-motion";
 

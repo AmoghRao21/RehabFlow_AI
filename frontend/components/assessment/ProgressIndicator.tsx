@@ -1,18 +1,21 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 interface ProgressIndicatorProps {
     currentStep: number;
 }
 
 export default function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
+    const t = useTranslations("assessment");
+
     const steps = [
-        { num: 1, label: "Lifestyle" },
-        { num: 2, label: "Medical" },
-        { num: 3, label: "Injury" },
-        { num: 4, label: "Photos" },
-        { num: 5, label: "Review" },
+        { num: 1, label: t('progressLifestyle') },
+        { num: 2, label: t('progressMedical') },
+        { num: 3, label: t('progressInjury') },
+        { num: 4, label: t('progressPhotos') },
+        { num: 5, label: t('progressReview') },
     ];
 
     return (
@@ -37,11 +40,11 @@ export default function ProgressIndicator({ currentStep }: ProgressIndicatorProp
                                 animate={{
                                     scale: isActive ? 1.1 : 1,
                                     backgroundColor: isCompleted
-                                        ? "#10B981" // emerald-500
+                                        ? "#10B981"
                                         : isActive
-                                            ? "#2563EB" // blue-600
-                                            : "#F1F5F9", // slate-100
-                                    color: isCompleted || isActive ? "#ffffff" : "#64748B", // slate-500
+                                            ? "#2563EB"
+                                            : "#F1F5F9",
+                                    color: isCompleted || isActive ? "#ffffff" : "#64748B",
                                 }}
                                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold shadow-sm ring-2 z-10 ${isActive ? "ring-blue-100" : "ring-transparent"
                                     }`}

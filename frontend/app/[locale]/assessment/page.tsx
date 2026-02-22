@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "iconoir-react";
+import { useTranslations } from "next-intl";
 
 import ProtectedRoute from "@/components/protected-route";
 import ProgressIndicator from "@/components/assessment/ProgressIndicator";
@@ -19,6 +20,7 @@ import { supabase } from "@/lib/supabase";
 export default function AssessmentPage() {
     const router = useRouter();
     const { user } = useAuth();
+    const t = useTranslations();
 
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -65,11 +67,11 @@ export default function AssessmentPage() {
     const handleNext = () => {
         setError(null);
         if (currentStep === 1) {
-            if (!formData.occupation_type) return setError("Please enter your occupation.");
+            if (!formData.occupation_type) return setError(t('assessment.errorOccupation'));
         }
         if (currentStep === 3) {
-            if (!formData.pain_location) return setError("Please select a pain location.");
-            if (!formData.pain_cause) return setError("Please describe the cause.");
+            if (!formData.pain_location) return setError(t('assessment.errorPainLocation'));
+            if (!formData.pain_cause) return setError(t('assessment.errorPainCause'));
         }
         setCurrentStep((prev) => prev + 1);
     };
@@ -173,7 +175,7 @@ export default function AssessmentPage() {
             router.push("/dashboard");
         } catch (err: any) {
             console.error(err);
-            setError(err.message || "Failed to submit assessment. Please try again.");
+            setError(err.message || t('assessment.failedSubmit'));
             setLoading(false);
         }
     };
@@ -191,14 +193,14 @@ export default function AssessmentPage() {
                     >
                         <div className="mb-8 border-b border-slate-100 pb-4">
                             <h1 className="text-2xl font-bold text-slate-900">
-                                {currentStep === 1 && "Lifestyle & Activity"}
-                                {currentStep === 2 && "Medical History"}
-                                {currentStep === 3 && "Injury Details"}
-                                {currentStep === 4 && "Injury Photos"}
-                                {currentStep === 5 && "Review & Confirm"}
+                                {currentStep === 1 && t('assessment.stepLifestyle')}
+                                {currentStep === 2 && t('assessment.stepMedical')}
+                                {currentStep === 3 && t('assessment.stepInjury')}
+                                {currentStep === 4 && t('assessment.stepPhotos')}
+                                {currentStep === 5 && t('assessment.stepReview')}
                             </h1>
                             <p className="text-slate-500">
-                                Step {currentStep} of 5 • Please answer accurately for best results.
+                                {t('assessment.stepOfTotal', { current: currentStep, total: 5 })}
                             </p>
                         </div>
 
@@ -248,7 +250,7 @@ export default function AssessmentPage() {
                                 className={`flex items-center gap-2 font-medium text-slate-500 transition-colors hover:text-slate-900 ${currentStep === 1 ? "invisible" : ""
                                     }`}
                             >
-                                <ArrowLeft className="h-4 w-4" /> Back
+                                <ArrowLeft className="h-4 w-4" /> {t('assessment.back')}
                             </button>
 
                             {currentStep < 5 ? (
@@ -256,7 +258,7 @@ export default function AssessmentPage() {
                                     onClick={handleNext}
                                     className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20"
                                 >
-                                    Next Step <ArrowRight className="h-4 w-4" />
+                                    {t('assessment.nextStep')} <ArrowRight className="h-4 w-4" />
                                 </button>
                             ) : (
                                 <button
@@ -267,7 +269,7 @@ export default function AssessmentPage() {
                                     {loading ? (
                                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                     ) : (
-                                        <>Submit Assessment <ArrowRight className="h-4 w-4" /></>
+                                        <>{t('assessment.submit')} <ArrowRight className="h-4 w-4" /></>
                                     )}
                                 </button>
                             )}
