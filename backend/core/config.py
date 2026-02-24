@@ -8,6 +8,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     supabase_url: str
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str
     redis_url: str
     modal_endpoint: str = ""
+    youtube_api_key: str = ""
     medgemma_endpoint: str = ""
     environment: str = "development"
     log_level: str = "INFO"
