@@ -48,7 +48,7 @@ async def validate_assessment_ownership(
         .execute()
     )
 
-    if response.data is None:
+    if response is None or response.data is None:
         logger.warning(
             "Assessment %s not found or not owned by user %s",
             injury_assessment_id,
@@ -74,6 +74,8 @@ async def fetch_baseline_profile(user_id: str) -> dict[str, Any] | None:
         .maybe_single()
         .execute()
     )
+    if response is None:
+        return None
     return response.data
 
 
@@ -175,7 +177,7 @@ async def fetch_user_language(user_id: str) -> str:
         .execute()
     )
 
-    if response.data and response.data.get("language"):
+    if response is not None and response.data and response.data.get("language"):
         return response.data["language"]
 
     return "en"
@@ -202,4 +204,6 @@ async def fetch_clinical_analysis(
         .execute()
     )
 
+    if response is None:
+        return None
     return response.data

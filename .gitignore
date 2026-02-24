@@ -8,3 +8,5 @@ dist/
 *.log
 .DS_Store
 test.html
+.pytest_cache/
+frontend\.env

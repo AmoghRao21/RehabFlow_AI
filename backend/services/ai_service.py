@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import httpx
+from fastapi import HTTPException, status
 
 from core.config import get_settings
 from core.logger import get_logger
@@ -30,8 +31,9 @@ logger = get_logger(__name__)
 
 MODEL_VERSION = "blip:Salesforce/blip-image-captioning-large+medgemma:google/medgemma-4b-it"
 
-# Timeout for the Modal endpoint (model inference can take a few seconds)
-MODAL_TIMEOUT = 120.0
+# Timeout for the Modal endpoint — first call may cold-start the GPU
+# container (loading BLIP ~1 GB + MedGemma ~8.5 GB), which can take 2-5 min.
+MODAL_TIMEOUT = 300.0
 
 
 # ── Modal endpoint call ─────────────────────────────────────────
@@ -56,7 +58,11 @@ async def _call_medgemma_endpoint(
             "Deploy the Modal endpoint and set the URL in .env"
         )
 
+    # The DEPLOYED Modal endpoint uses  image_base64: str   (single image)
+    # The LOCAL/future code uses        images_base64: list[str]
+    # Send both so either version works.
     payload = {
+        "image_base64": images_base64[0] if images_base64 else "",
         "images_base64": images_base64,
         "text_complaint": text_complaint,
         "pain_location": pain_location,
@@ -64,11 +70,27 @@ async def _call_medgemma_endpoint(
         "patient_context": patient_context,
     }
 
-    async with httpx.AsyncClient(timeout=MODAL_TIMEOUT) as client:
-        response = await client.post(
-            endpoint_url,
-            json=payload,
-            headers={"Content-Type": "application/json"},
+    try:
+        async with httpx.AsyncClient(
+            timeout=MODAL_TIMEOUT,
+            follow_redirects=True,  # Modal returns 303 redirects for async results
+        ) as client:
+            response = await client.post(
+                endpoint_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
+    except httpx.ReadTimeout:
+        logger.error(
+            "MedGemma endpoint timed out after %.0f seconds (cold start?)",
+            MODAL_TIMEOUT,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=(
+                "AI analysis timed out. The GPU may be cold-starting. "
+                "Please wait 1-2 minutes and try again."
+            ),
         )
 
     if response.status_code != 200:
@@ -77,11 +99,15 @@ async def _call_medgemma_endpoint(
             response.status_code,
             response.text[:500],
         )
-        raise RuntimeError(
-            f"MedGemma endpoint error (HTTP {response.status_code})"
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI analysis service returned an error (HTTP {response.status_code})",
         )
 
-    return response.json()
+    data = response.json()
+    logger.info("Raw Modal response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
+    logger.info("Raw Modal response (truncated): %s", str(data)[:1000])
+    return data
 
 
 # ── Public entry point (signature unchanged) ────────────────────
@@ -142,10 +168,31 @@ async def run_clinical_analysis(
         condition_names,
     )
 
+    # ── Build text_complaint from actual DB columns ────────────
+    # Frontend stores injury description in `pain_cause` (NOT `description`).
+    # We enrich it with swelling/mobility info for better AI analysis.
+    complaint_parts: list[str] = []
+
+    pain_cause = (assessment.get("pain_cause") or "").strip()
+    if pain_cause:
+        complaint_parts.append(f"Cause: {pain_cause}")
+
+    additional_notes = (assessment.get("additional_notes") or "").strip()
+    if additional_notes and additional_notes != "Advanced assessment submission":
+        complaint_parts.append(f"Notes: {additional_notes}")
+
+    if assessment.get("visible_swelling"):
+        complaint_parts.append("Visible swelling is present.")
+    if assessment.get("mobility_restriction"):
+        complaint_parts.append("Mobility is restricted.")
+
+    pain_location = assessment.get("pain_location", "unspecified area")
+    text_complaint = "; ".join(complaint_parts) if complaint_parts else f"Pain in {pain_location}"
+
     result = await _call_medgemma_endpoint(
         images_base64=raw_images,
-        text_complaint=assessment.get("description", ""),
-        pain_location=assessment.get("pain_location", ""),
+        text_complaint=text_complaint,
+        pain_location=pain_location,
         pain_level=assessment.get("pain_level", 5),
         patient_context=patient_context,
     )

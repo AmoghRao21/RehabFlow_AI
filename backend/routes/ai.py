@@ -59,10 +59,19 @@ async def analyze_injury(
         user_id,
     )
 
-    result = await run_clinical_analysis(
-        injury_assessment_id=injury_assessment_id,
-        user_id=user_id,
-    )
+    try:
+        result = await run_clinical_analysis(
+            injury_assessment_id=injury_assessment_id,
+            user_id=user_id,
+        )
+    except HTTPException:
+        raise  # Let FastAPI handle HTTPExceptions normally
+    except Exception as exc:
+        logger.exception("Unexpected error during analysis")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Analysis failed: {exc}",
+        )
 
     return ClinicalAnalysisResponse(**result)
 

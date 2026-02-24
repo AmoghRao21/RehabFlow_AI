@@ -42,7 +42,7 @@ export default function DashboardPage() {
                     .eq("user_id", user.id)
                     .order("created_at", { ascending: false })
                     .limit(1)
-                    .single();
+                    .maybeSingle();
 
                 // Fetch latest injury assessment (without ai_clinical_analysis join)
                 const { data: assessmentData } = await supabase
@@ -51,7 +51,7 @@ export default function DashboardPage() {
                     .eq("user_id", user.id)
                     .order("created_at", { ascending: false })
                     .limit(1)
-                    .single();
+                    .maybeSingle();
 
                 // Fetch translated analysis from backend API
                 if (assessmentData) {
