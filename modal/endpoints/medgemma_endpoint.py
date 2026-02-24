@@ -219,28 +219,51 @@ class ClinicalAnalysisService:
             if context_parts:
                 context_section = "\n## Patient Context\n" + "\n".join(context_parts) + "\n"
 
-        prompt = f"""You are a rehabilitation specialist AI assistant. Based on the following patient information, provide a comprehensive rehabilitation assessment and plan.
+        prompt = f"""You are a board-certified rehabilitation specialist. Provide a comprehensive clinical assessment AND a detailed, actionable rehabilitation plan with specific exercises.
 
 ## Patient Complaint
 - Location: {pain_location if pain_location else 'Not specified'}
 - Pain level: {pain_level}/10
 - Description: {text_complaint}
 {image_section}{context_section}
-## Instructions
-Provide your response in the following structured format:
+## Required Output Format
 
-**Probable Condition:** [Your assessment of the most likely condition]
+You MUST follow this exact format:
 
-**Confidence:** [A score from 0.0 to 1.0]
+**Probable Condition:** State the most likely diagnosis or condition name.
 
-**Clinical Reasoning:** [Detailed explanation of your assessment, incorporating the visual findings from the images and the patient's reported symptoms]
+**Confidence:** 0.XX (a number between 0.0 and 1.0)
+
+**Clinical Reasoning:**
+Explain your assessment in 3-5 sentences. Reference the visual findings and reported symptoms.
 
 **Rehabilitation Plan:**
-1. **Phase 1 — Acute (Days 1-7):** [Immediate steps, rest/ice/compression/elevation, pain management]
-2. **Phase 2 — Recovery (Weeks 2-4):** [Gentle exercises, stretching, mobility work]
-3. **Phase 3 — Strengthening (Weeks 4-8):** [Progressive strengthening, functional exercises]
-4. **Precautions:** [What to avoid, when to seek medical attention]
-5. **Home Exercises:** [Specific exercises with sets/reps/duration]
+
+### Phase 1 — Acute Relief (Days 1-7)
+Goal: Reduce pain and inflammation.
+- List 3-5 specific actions (e.g., RICE protocol, pain management, activity modification)
+- For each exercise in this phase, use this format:
+  - **Exercise Name**: Description of the exercise
+    - Sets: X | Reps: X | Hold: Xs | Frequency: X times/day
+
+### Phase 2 — Early Recovery (Weeks 2-4)
+Goal: Restore mobility and flexibility.
+- List 3-5 specific stretches and gentle exercises with the same format:
+  - **Exercise Name**: Description
+    - Sets: X | Reps: X | Hold: Xs | Frequency: X times/day
+
+### Phase 3 — Strengthening (Weeks 4-8)
+Goal: Rebuild strength and function.
+- List 3-5 progressive strengthening exercises:
+  - **Exercise Name**: Description
+    - Sets: X | Reps: X | Hold: Xs | Frequency: X times/day
+
+### Precautions
+- List 3-5 warning signs and things to avoid
+- When to seek immediate medical attention
+
+### Home Exercise Program
+Summarize a daily routine the patient can follow at home, listing each exercise with sets, reps, hold time, and frequency.
 
 Be thorough, evidence-based, and always recommend consulting a healthcare professional for proper diagnosis."""
 
@@ -271,7 +294,7 @@ Be thorough, evidence-based, and always recommend consulting a healthcare profes
         with torch.no_grad():
             outputs = self.medgemma_model.generate(
                 **inputs,
-                max_new_tokens=1024,
+                max_new_tokens=2048,
                 temperature=0.4,
                 top_p=0.9,
                 do_sample=True,
@@ -287,6 +310,8 @@ Be thorough, evidence-based, and always recommend consulting a healthcare profes
 
     def _parse_medgemma_response(self, response: str) -> dict:
         """Extract structured fields from MedGemma's text response."""
+        import re
+
         probable_condition = ""
         confidence_score = 0.7
         reasoning = ""
@@ -298,23 +323,31 @@ Be thorough, evidence-based, and always recommend consulting a healthcare profes
         for line in lines:
             line_lower = line.lower().strip()
 
-            if "probable condition" in line_lower:
-                probable_condition = line.split(":", 1)[-1].strip().strip("*")
+            if "probable condition" in line_lower or "diagnosis" in line_lower:
+                probable_condition = line.split(":", 1)[-1].strip().strip("*").strip()
                 current_section = None
-            elif "confidence" in line_lower and ("0." in line or "1.0" in line):
+            elif "confidence" in line_lower and re.search(r"\d\.\d", line):
                 try:
-                    # Extract the float value
-                    import re
                     match = re.search(r"(0\.\d+|1\.0)", line)
                     if match:
                         confidence_score = float(match.group(1))
                 except (ValueError, IndexError):
                     pass
                 current_section = None
-            elif "clinical reasoning" in line_lower:
+            elif "clinical reasoning" in line_lower or "assessment" in line_lower and current_section is None:
                 current_section = "reasoning"
-            elif "rehabilitation plan" in line_lower:
+            elif any(kw in line_lower for kw in [
+                "rehabilitation plan", "rehab plan", "treatment plan",
+                "phase 1", "## phase", "### phase",
+                "acute relief", "acute phase",
+            ]):
                 current_section = "rehab_plan"
+                rehab_plan += line + "\n"  # Include the heading itself
+            elif any(kw in line_lower for kw in [
+                "precaution", "warning", "home exercise", "daily routine",
+                "phase 2", "phase 3", "early recovery", "strengthening",
+            ]) and current_section == "rehab_plan":
+                rehab_plan += line + "\n"  # Keep these in rehab_plan
             else:
                 if current_section == "reasoning":
                     reasoning += line + "\n"

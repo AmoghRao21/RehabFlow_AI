@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from api.health import router as health_router
 from routes.ai import router as ai_router
 from routes.youtube import router as youtube_router
+from routes.progress import router as progress_router
 from core.config import get_settings
 from core.logger import get_logger
 from db.redis import close_redis_client, get_redis_client
@@ -58,8 +59,6 @@ app.add_middleware(
 
 
 # Global catch-all handler — ensures unhandled exceptions still get CORS headers.
-# Without this, a RuntimeError or other non-HTTPException would bypass the CORS
-# middleware and the browser would show a CORS error instead of the actual error.
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
@@ -72,4 +71,4 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(health_router)
 app.include_router(ai_router)
 app.include_router(youtube_router)
-
+app.include_router(progress_router)
