@@ -146,10 +146,18 @@ export default function InjuryStatusCard({ assessment, loading, onRunAnalysis }:
                                 </div>
                             </div>
 
-                            <p className="text-sm leading-relaxed text-slate-700">
+                            <p className="text-sm leading-relaxed text-slate-700 line-clamp-4">
                                 {aiResult.reasoning}
                             </p>
                         </div>
+
+                        <Link
+                            href="/rehab-plan"
+                            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 transition-all hover:shadow-xl hover:shadow-purple-300/50 hover:from-purple-700 hover:to-indigo-700"
+                        >
+                            <Sparks className="h-4 w-4" /> {t('viewRehabPlan')}
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
                     </div>
                 ) : (
                     <div className="rounded-xl bg-slate-50 p-6 text-center shadow-inner">

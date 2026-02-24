@@ -4,19 +4,18 @@ AI service layer.
 Orchestrates the clinical analysis flow:
   1. Gather all patient context from Supabase.
   2. Download injury images and encode them.
-  3. Generate clinical analysis (currently mock / deterministic).
+  3. Call the Modal BLIP + MedGemma endpoint for real AI analysis.
   4. Persist result in DB.
   5. Return the stored result.
-
-NOTE: The Modal call is temporarily replaced with deterministic mock
-logic for local development and testing.  Restore the real Modal
-integration when the inference endpoint is ready.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+import httpx
+
+from core.config import get_settings
 from core.logger import get_logger
 from services.supabase_service import (
     download_image_as_base64,
@@ -29,86 +28,60 @@ from services.supabase_service import (
 
 logger = get_logger(__name__)
 
-MODEL_VERSION = "mock-deterministic-v1"
+MODEL_VERSION = "blip:Salesforce/blip-image-captioning-large+medgemma:google/medgemma-4b-it"
+
+# Timeout for the Modal endpoint (model inference can take a few seconds)
+MODAL_TIMEOUT = 120.0
 
 
-# ── Mock inference ──────────────────────────────────────────────
+# ── Modal endpoint call ─────────────────────────────────────────
 
-def _mock_analyze(
-    assessment: dict[str, Any],
-    baseline: dict[str, Any] | None,
-    condition_names: list[str],
-    image_count: int,
+async def _call_medgemma_endpoint(
+    images_base64: list[str],
+    text_complaint: str,
+    pain_location: str,
+    pain_level: int,
+    patient_context: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    Deterministic mock that replaces the Modal endpoint.
-
-    Returns a structured result based on pain_location, pain_level,
-    swelling, mobility restriction, and lifestyle context.
+    Call the Modal-hosted BLIP + MedGemma endpoint to generate
+    a clinical analysis and rehabilitation plan.
     """
-    pain_location: str = assessment.get("pain_location", "unknown")
-    pain_level: int = assessment.get("pain_level", 5)
-    swelling: bool = assessment.get("visible_swelling", False)
-    mobility: bool = assessment.get("mobility_restriction", False)
+    settings = get_settings()
+    endpoint_url = settings.medgemma_endpoint
 
-    # ── Condition & confidence by location ──────────────────────
-    if pain_location == "knee":
-        probable_condition = "Possible ligament strain"
-        confidence_score = 0.82
-    elif pain_location == "shoulder":
-        probable_condition = "Possible rotator cuff inflammation"
-        confidence_score = 0.79
-    else:
-        probable_condition = "Soft tissue injury suspected"
-        confidence_score = 0.65
-
-    # ── Build reasoning paragraph ───────────────────────────────
-    parts: list[str] = [
-        f"The patient reports pain in the {pain_location.replace('_', ' ')} region "
-        f"with a self-reported intensity of {pain_level}/10.",
-    ]
-
-    if swelling:
-        parts.append("Visible swelling is present, suggesting an active inflammatory response.")
-    else:
-        parts.append("No visible swelling was reported.")
-
-    if mobility:
-        parts.append(
-            "The patient indicates restricted mobility, which may point to "
-            "structural involvement or significant soft-tissue compromise."
-        )
-    else:
-        parts.append("Mobility appears to be within a functional range.")
-
-    if baseline:
-        occupation = baseline.get("occupation_type", "unspecified")
-        sitting = baseline.get("daily_sitting_hours", 0)
-        work_level = baseline.get("physical_work_level", "unknown")
-        parts.append(
-            f"Lifestyle context: occupation is '{occupation}', "
-            f"approximately {sitting} hours of daily sitting, "
-            f"and a '{work_level}' physical-work level."
+    if not endpoint_url:
+        raise ValueError(
+            "MEDGEMMA_ENDPOINT is not configured. "
+            "Deploy the Modal endpoint and set the URL in .env"
         )
 
-    if condition_names:
-        parts.append(
-            f"Relevant medical history includes: {', '.join(condition_names)}. "
-            "These conditions have been factored into the assessment."
-        )
-
-    if image_count > 0:
-        parts.append(
-            f"{image_count} injury image(s) were provided and reviewed as part of this analysis."
-        )
-
-    reasoning = " ".join(parts)
-
-    return {
-        "probable_condition": probable_condition,
-        "confidence_score": confidence_score,
-        "reasoning": reasoning,
+    payload = {
+        "images_base64": images_base64,
+        "text_complaint": text_complaint,
+        "pain_location": pain_location,
+        "pain_level": pain_level,
+        "patient_context": patient_context,
     }
+
+    async with httpx.AsyncClient(timeout=MODAL_TIMEOUT) as client:
+        response = await client.post(
+            endpoint_url,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+        )
+
+    if response.status_code != 200:
+        logger.error(
+            "MedGemma endpoint returned %d: %s",
+            response.status_code,
+            response.text[:500],
+        )
+        raise RuntimeError(
+            f"MedGemma endpoint error (HTTP {response.status_code})"
+        )
+
+    return response.json()
 
 
 # ── Public entry point (signature unchanged) ────────────────────
@@ -122,7 +95,7 @@ async def run_clinical_analysis(
 
     1. Validate ownership.
     2. Fetch patient context (baseline, conditions, injury, images).
-    3. Run mock analysis (replaces Modal call).
+    3. Call Modal BLIP + MedGemma endpoint for AI analysis.
     4. Persist result in ``ai_clinical_analysis``.
     5. Return the stored row.
     """
@@ -140,7 +113,7 @@ async def run_clinical_analysis(
     conditions = await fetch_medical_conditions(user_id)
     image_rows = await fetch_injury_images(injury_assessment_id)
 
-    # Download images (kept so the flow is fully exercised)
+    # Download images as base64
     raw_images: list[str] = []
     for row in image_rows:
         b64 = await download_image_as_base64(row["image_url"])
@@ -153,26 +126,59 @@ async def run_clinical_analysis(
         if mc and isinstance(mc, dict):
             condition_names.append(mc.get("name", "Unknown"))
 
-    # ── 3. Mock analysis (replaces Modal call) ──────────────────
-    result = _mock_analyze(
-        assessment=assessment,
-        baseline=baseline,
-        condition_names=condition_names,
-        image_count=len(raw_images),
+    # Build patient context dict for the endpoint
+    patient_context: dict[str, Any] = {}
+    if baseline:
+        patient_context["occupation_type"] = baseline.get("occupation_type", "")
+        patient_context["daily_sitting_hours"] = baseline.get("daily_sitting_hours", 0)
+        patient_context["physical_work_level"] = baseline.get("physical_work_level", "")
+    if condition_names:
+        patient_context["medical_conditions"] = condition_names
+
+    # ── 3. Call Modal endpoint ──────────────────────────────────
+    logger.info(
+        "Calling MedGemma endpoint | images=%d conditions=%s",
+        len(raw_images),
+        condition_names,
+    )
+
+    result = await _call_medgemma_endpoint(
+        images_base64=raw_images,
+        text_complaint=assessment.get("description", ""),
+        pain_location=assessment.get("pain_location", ""),
+        pain_level=assessment.get("pain_level", 5),
+        patient_context=patient_context,
     )
 
     logger.info(
-        "Mock AI result | condition=%s confidence=%.2f",
-        result["probable_condition"],
-        result["confidence_score"],
+        "AI result | condition=%s confidence=%.2f",
+        result.get("probable_condition", "N/A"),
+        result.get("confidence_score", 0.0),
     )
+
+    # Combine reasoning and rehab_plan into the reasoning field
+    # (the DB schema has a single 'reasoning' column)
+    full_reasoning = result.get("reasoning", "")
+    rehab_plan = result.get("rehab_plan", "")
+    if rehab_plan:
+        full_reasoning += "\n\n## Rehabilitation Plan\n" + rehab_plan
+
+    # Include image captions in reasoning if available
+    captions = result.get("image_captions", [])
+    if captions:
+        caption_text = "\n".join(
+            f"- Image {i+1}: {cap}" for i, cap in enumerate(captions)
+        )
+        full_reasoning = (
+            f"## Visual Assessment\n{caption_text}\n\n{full_reasoning}"
+        )
 
     # ── 4. Persist result ───────────────────────────────────────
     stored = await insert_clinical_analysis(
         injury_assessment_id=injury_assessment_id,
-        probable_condition=result["probable_condition"],
-        confidence_score=result["confidence_score"],
-        reasoning=result["reasoning"],
+        probable_condition=result.get("probable_condition", "Assessment pending"),
+        confidence_score=result.get("confidence_score", 0.0),
+        reasoning=full_reasoning,
         model_version=MODEL_VERSION,
     )
 

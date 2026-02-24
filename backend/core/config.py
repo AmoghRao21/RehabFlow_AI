@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str
     redis_url: str
     modal_endpoint: str = ""
+    medgemma_endpoint: str = ""
     environment: str = "development"
     log_level: str = "INFO"
 
