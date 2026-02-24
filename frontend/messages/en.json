@@ -34,7 +34,28 @@
         "achievementsTitle": "Your Achievements",
         "momentumMessage": "Keep up the momentum!",
         "totalPointsLabel": "Total Points",
-        "dayStreakLabel": "Day Streak"
+        "dayStreakLabel": "Day Streak",
+        "viewRehabPlan": "View Full Rehab Plan"
+    },
+    "rehabPlan": {
+        "backToDashboard": "Back to Dashboard",
+        "loading": "Loading your rehabilitation plan...",
+        "noAssessmentTitle": "No Assessment Found",
+        "noAssessmentDescription": "Complete an injury assessment first to generate your personalized rehab plan.",
+        "noAnalysisTitle": "No Analysis Yet",
+        "noAnalysisDescription": "Run the AI analysis from your dashboard to generate a rehabilitation plan.",
+        "errorTitle": "Something Went Wrong",
+        "errorDescription": "We couldn't load your rehabilitation plan. Please try again later.",
+        "goToDashboard": "Go to Dashboard",
+        "startAssessment": "Start Assessment",
+        "aiPoweredAnalysis": "AI-Powered Clinical Analysis",
+        "conditionFallback": "Condition Identified",
+        "confidence": "Confidence",
+        "clinicalReasoning": "Clinical Reasoning",
+        "rehabilitationPlan": "Rehabilitation Plan",
+        "phase": "Phase",
+        "phases": "Phases",
+        "disclaimer": "This AI-generated rehabilitation plan is for informational purposes only and does not replace professional medical advice. Always consult a healthcare provider before starting any treatment."
     },
     "assessment": {
         "title": "Injury Assessment",
